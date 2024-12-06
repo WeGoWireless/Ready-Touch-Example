@@ -82,6 +82,13 @@ Adafruit_ILI9341 display_gfx = Adafruit_ILI9341(VSPI_TFT_CS, VSPI_TFT_DC);
 
 // Touch screen
 #include <XPT2046_Touchscreen.h>  // by Paul Stoffregenesp 
+XPT2046_Touchscreen ts(VSPI_TOUCH_CS);
+uint32_t lastTouched = 0;
+
+const uint16_t TS_MINX = 370;
+const uint16_t TS_MINY = 470;
+const uint16_t TS_MAXX = 3700;
+const uint16_t TS_MAXY = 3600;
 
 #include <SD.h>    // ESP32 lib
 #include <SPI.h>  // ESP32 lib
@@ -117,9 +124,10 @@ GFXcanvas16 canvasIn(60, 20);
 GFXcanvas16 canvasAnalog(60, 20);
 GFXcanvas16 canvasOutput(104, 20);
 GFXcanvas16 canvasBattery(85, 22);
+GFXcanvas16 canvasRelayButton(70, 25);
 GFXcanvas1 canvasTemperature(112, 70);
 GFXcanvas1 canvasSD(100, 12);
-GFXcanvas1 canvasWiFi(100, 190);
+GFXcanvas1 canvasWiFi(160, 170);
 
 struct tft_struct
 {
@@ -130,8 +138,13 @@ struct tft_struct
 	float lastBattV = 0;
 	float Temperature = 0;
 	int8_t drawSD = 0;					   // 0=not drawn, 1 mounted, 2 not mounted
+
+	uint16_t btnRelay1X = 10, btnRelay1Y = 210, btnRelay1W = 50, btnRelay1H = 50;
+	uint16_t btnRelay2X = 100, btnRelay2Y = 210, btnRelay2W = 50, btnRelay2H = 50;
+	uint16_t btnRelay3X = 190, btnRelay3Y = 210, btnRelay3W = 50, btnRelay3H = 50;
 };
 struct tft_struct tftSt;
+uint8_t screenRotation = 3; // 3 = landscape sd up
 
 struct power_struct
 {
@@ -140,6 +153,17 @@ struct power_struct
 	float ChargeRate = 0;
 };
 struct power_struct power_st;
+
+// RELAY
+const uint8_t PROGMEM ON = 1;
+const uint8_t PROGMEM OFF = 0;
+struct relay_struct
+{
+	uint8_t state = OFF;
+	uint8_t lastState = OFF;
+};
+struct relay_struct io_relay_struct[3];
+uint8_t out_relayGPIOs[6] = { REL1_SET_PIN, REL1_RESET_PIN, REL2_SET_PIN, REL2_RESET_PIN, REL3_SET_PIN, REL3_RESET_PIN };  // Assign each GPIO to a relay
 
 struct wifi_struct
 {
@@ -161,6 +185,9 @@ const uint8_t PROGMEM IN_VIOLATED = 11;
 const uint8_t PROGMEM IN_FAULTY = 12;
 const uint8_t PROGMEM IN_SHORT = 13;
 const uint8_t PROGMEM IN_POWER_LOSS = 14;
+
+const uint32_t TOUCH_UPDATE = 200; // ms, dont set too high as 1000 will not trigger touchscreen
+uint32_t Timer_touch;
 
 // INPUT
 const long IO_INPUT_UPDATE = 1 * 1000;
@@ -192,10 +219,15 @@ void SearchDS2484();
 float readTemperature(uint8_t* rom);
 void Strat_Conversion(uint8_t* rom);
 void setupTFT();
+void setTouchRotation(uint8_t n);
 void drawWiFi(uint16_t x, uint16_t y);
 void drawBattery(uint16_t x, uint16_t y, bool initDraw = false);
 void drawTemperatureDetail(uint16_t x, uint16_t y, bool initDraw = false);
 void drawSD(uint16_t x, uint16_t y);
+void detectButtons(int16_t x, int16_t y);
+void drawRedBtn(uint16_t x, uint16_t y);
+void drawGreenBtn(uint16_t x, uint16_t y);
+void relaySetup();
 
 void setup()
 {
@@ -236,8 +268,16 @@ void setup()
 	TimerTemperature = millis() - TEMPERATURE_UPDATE + 1000;  // read temperature 1 second giving time for conversion
 	setupTFT();
 	drawBattery(18, 0, true);
-	drawTemperatureDetail(100, 80, true);
+	drawTemperatureDetail(75, 50, true);
 	drawSD(220, 0);
+	drawGreenBtn(tftSt.btnRelay1X, tftSt.btnRelay1Y);
+	drawGreenBtn(tftSt.btnRelay2X, tftSt.btnRelay2Y);
+	drawGreenBtn(tftSt.btnRelay3X, tftSt.btnRelay3Y);
+	relaySetup();
+}
+
+void setTouchRotation(uint8_t n) {
+	ts.setRotation(n);  // set ts rotation
 }
 
 // Make size of files human readable
@@ -247,6 +287,14 @@ String file_humanReadableSize(const size_t bytes) {
 	else if (bytes < (1024 * 1024)) return String(bytes / 1024.0) + " KB";
 	else if (bytes < (1024 * 1024 * 1024)) return String(bytes / 1024.0 / 1024.0) + " MB";
 	else return String(bytes / 1024.0 / 1024.0 / 1024.0) + " GB";
+}
+
+void piezo_click() {
+	if (!piezo_busy) {
+		piezo_busy = true;
+		tone(PIEZO_PIN, 4000, PIEZO_DURATION);
+		piezo_timer = millis();
+	}
 }
 
 void setupWiFi() {
@@ -333,18 +381,14 @@ void scanWiFi(uint16_t x, uint16_t y) {
 			canvasWiFi.setCursor(30, canvasLine * 12);
 			canvasWiFi.print(buff);
 
-			if (WiFi.SSID(i).length() >= 9) {
-				canvasLine += 1;
-			}
 			canvasLine += 1;
-			//delay(10);
 		}
-		display_gfx.drawBitmap(x, y, canvasWiFi.getBuffer(), 100, 190, ILI9341_WHITE, ILI9341_BLACK);
+		display_gfx.drawBitmap(x, y, canvasWiFi.getBuffer(), 160, 170, ILI9341_WHITE, ILI9341_BLACK);
 		if (wifiScanPrint) {
 			Serial.println("");
 		}
 
-		// Delete the scan result to free memory for code below.
+		// Delete the scan result to free memory.
 		WiFi.scanDelete();
 
 		// WiFi.scanNetworks start new scan
@@ -400,6 +444,13 @@ void drawSD(uint16_t x, uint16_t y) {
 		canvasSD.drawFastVLine(8, 2, 3, ILI9341_RED); // 3 pins top
 		display_gfx.drawBitmap(x, y, canvasSD.getBuffer(), 100, 12, ILI9341_RED, ILI9341_BLACK);
 		tftSt.drawSD = 2;
+	}
+}
+
+void relaySetup() {
+	for (uint8_t i = 0; i < sizeof(out_relayGPIOs); i++) {
+		pinMode(out_relayGPIOs[i], OUTPUT);
+		digitalWrite(out_relayGPIOs[i], OFF);
 	}
 }
 
@@ -524,11 +575,15 @@ void setupRTC() {
 void setupTFT() {
 	// TFT setup
 	display_gfx.begin();
-	display_gfx.setRotation(3);
+	display_gfx.setRotation(screenRotation);
 	display_gfx.fillScreen(ILI9341_BLACK);
 
 	// Turn on TFT LEDs
 	digitalWrite(TFT_LED, LOW);    // LOW to Turn on;
+
+	// setup touch
+	ts.begin();
+	setTouchRotation(screenRotation);
 }
 
 void setupMAX() {
@@ -569,6 +624,25 @@ void mountSD() {
 		if (i > 10) {
 			Serial.println(F("Gave up waiting for SD card to mount."));
 		}
+	}
+}
+
+void io_set_relay(uint8_t relay, uint8_t state)
+{
+	// latching relay requires two outputs
+	// ON to latch then save power and turn off coil
+	// Latch the ON or OFF relay position
+	// manufacture specifies min 40ms on then off for latching to occure
+	if (state == OFF) {
+		digitalWrite(out_relayGPIOs[relay+1], ON);
+		delay(15);
+		digitalWrite(out_relayGPIOs[relay+1], OFF);
+	}
+	else {
+		digitalWrite(out_relayGPIOs[relay], ON);
+		delay(15);
+		digitalWrite(out_relayGPIOs[relay], OFF);
+
 	}
 }
 
@@ -622,6 +696,42 @@ get_input_EOL(int sensor_pin) {
 	else {
 		return IN_UNKNOWN;
 	}
+}
+
+void drawRedBtn(uint16_t x, uint16_t y)
+{
+	canvasRelayButton.fillScreen(ILI9341_BLACK);
+
+	canvasRelayButton.drawRoundRect(0, 0, 70, 25, 12, ILI9341_RED);
+	canvasRelayButton.drawRoundRect(1, 1, 68, 23, 12, ILI9341_RED);
+	canvasRelayButton.fillCircle(58, 12, 7, ILI9341_RED);
+	canvasRelayButton.setFont(&SansSerif_plain_16);
+	canvasRelayButton.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+	canvasRelayButton.setCursor(6, 19);
+	canvasRelayButton.print("ON");
+	canvasRelayButton.setTextColor(ILI9341_BLACK, ILI9341_BLACK);
+	canvasRelayButton.setCursor(53, 17);
+	canvasRelayButton.print(">");
+
+	display_gfx.drawRGBBitmap(x, y, canvasRelayButton.getBuffer(), 70, 25);
+}
+
+void drawGreenBtn(uint16_t x, uint16_t y)
+{
+	canvasRelayButton.fillScreen(ILI9341_BLACK);
+
+	canvasRelayButton.drawRoundRect(0, 0, 70, 25, 12, ILI9341_GREEN);
+	canvasRelayButton.drawRoundRect(1, 1, 68, 23, 12, ILI9341_GREEN);
+	canvasRelayButton.fillCircle(58, 12, 7, ILI9341_GREEN);
+	canvasRelayButton.setFont(&SansSerif_plain_16);
+	canvasRelayButton.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+	canvasRelayButton.setCursor(6, 19);
+	canvasRelayButton.print("OFF");
+	canvasRelayButton.setTextColor(ILI9341_BLACK, ILI9341_BLACK);
+	canvasRelayButton.setCursor(53, 17);
+	canvasRelayButton.print(">");
+
+	display_gfx.drawRGBBitmap(x, y, canvasRelayButton.getBuffer(), 70, 25);
 }
 
 /*********************************************************************
@@ -798,8 +908,81 @@ void drawBattery(uint16_t x, uint16_t y, bool initDraw) {
 	}
 }
 
+/********************************************************************
+* @brief     detecting pressed buttons with the given touchscreen values
+* @param  x  Top left corner horizontal coordinate.
+* @param  y  Top left corner vertical coordinate.
+* @return    None
+*********************************************************************/
+void detectButtons(int16_t x, int16_t y) {
+
+	if (x > tftSt.btnRelay1X && x < (tftSt.btnRelay1X + tftSt.btnRelay1W) && y > tftSt.btnRelay1Y && y < (tftSt.btnRelay1Y + tftSt.btnRelay1H)) {
+		// turned off to hear the relay click
+		//piezo_click();
+		if (io_relay_struct[0].state == ON) {
+			io_set_relay(0, OFF);
+			drawGreenBtn(tftSt.btnRelay1X, tftSt.btnRelay1Y);
+			io_relay_struct[0].state = OFF;
+		}
+		else if (io_relay_struct[0].state == OFF) {
+			io_set_relay(0, ON);
+			drawRedBtn(tftSt.btnRelay1X, tftSt.btnRelay1Y);
+			io_relay_struct[0].state = ON;
+		}
+	} else if (x > tftSt.btnRelay2X && x < (tftSt.btnRelay2X + tftSt.btnRelay2W) && y > tftSt.btnRelay2Y && y < (tftSt.btnRelay2Y + tftSt.btnRelay2H)) {
+		// turned off to hear the relay click
+		//piezo_click();
+		if (io_relay_struct[1].state == ON) {
+			io_set_relay(1, OFF);
+			drawGreenBtn(tftSt.btnRelay2X, tftSt.btnRelay2Y);
+			io_relay_struct[1].state = OFF;
+		}
+		else if (io_relay_struct[1].state == OFF) {
+			io_set_relay(1, ON);
+			drawRedBtn(tftSt.btnRelay2X, tftSt.btnRelay2Y);
+			io_relay_struct[1].state = ON;
+		}
+	} else if (x > tftSt.btnRelay3X && x < (tftSt.btnRelay3X + tftSt.btnRelay3W) && y > tftSt.btnRelay3Y && y < (tftSt.btnRelay3Y + tftSt.btnRelay3H)) {
+		// turned off to hear the relay click
+		//piezo_click();
+		if (io_relay_struct[2].state == ON) {
+			io_set_relay(2, OFF);
+			drawGreenBtn(tftSt.btnRelay3X, tftSt.btnRelay3Y);
+			io_relay_struct[2].state = OFF;
+		}
+		else if (io_relay_struct[2].state == OFF) {
+			io_set_relay(2, ON);
+			drawRedBtn(tftSt.btnRelay3X, tftSt.btnRelay3Y);
+			io_relay_struct[2].state = ON;
+		}
+	}
+}
+
+bool isTouched(int16_t debounceMillis) {
+	if (ts.touched() && millis() - lastTouched > debounceMillis) {
+		lastTouched = millis();
+		return true;
+	}
+	return false;
+}
+
 void loop()
 {
+	if ((millis() - Timer_touch) >= TOUCH_UPDATE) {
+		if (isTouched(500)) {
+			TS_Point p = ts.getPoint();
+			p.x = map(p.x, TS_MINX, TS_MAXX, 320, 0);
+			p.y = map(p.y, TS_MINY, TS_MAXY, 240, 0);
+			//Serial.println("");
+			//Serial.print("map:");
+			//Serial.print(p.x);
+			//Serial.print(" ");
+			//Serial.println(p.y);
+			detectButtons(p.x, p.y);
+		}
+		Timer_touch = millis();
+	}
+
 	// check to see if user inserted or removed SD card
 	if (!SD_inserted) {
 		if (digitalRead(SD_CD)) {
@@ -832,13 +1015,9 @@ void loop()
 		}
 		if (in_value != tftSt.input_last[0]) {
 			if (in_value == IN_CLOSED) {
-				if (!piezo_busy) {
-					piezo_busy = true;
-					tone(PIEZO_PIN, 4000, PIEZO_DURATION);
-					piezo_timer = millis();
-				}
+				piezo_click();
 			}
-			drawButton(1, IN_DIGITAL, in_value, 0, 10, 80);
+			drawButton(1, IN_DIGITAL, in_value, 0, 10, 50);
 			tftSt.input_last[0] = in_value;
 		}
 
@@ -850,13 +1029,9 @@ void loop()
 		}
 		if (in_value != tftSt.input_last[1]) {
 			if (in_value == IN_CLOSED) {
-				if (!piezo_busy) {
-					piezo_busy = true;
-					tone(PIEZO_PIN, 4000, PIEZO_DURATION);
-					piezo_timer = millis();
-				}
+				piezo_click();
 			}
-			drawButton(2, IN_DIGITAL, in_value, 0, 10, 100);
+			drawButton(2, IN_DIGITAL, in_value, 0, 10, 70);
 			tftSt.input_last[1] = in_value;
 		}
 
@@ -868,13 +1043,9 @@ void loop()
 		}
 		if (in_value != tftSt.input_last[2]) {
 			if (in_value == IN_CLOSED) {
-				if (!piezo_busy) {
-					piezo_busy = true;
-					tone(PIEZO_PIN, 4000, PIEZO_DURATION);
-					piezo_timer = millis();
-				}
+				piezo_click();
 			}
-			drawButton(3, IN_DIGITAL, in_value, 0, 10, 120);
+			drawButton(3, IN_DIGITAL, in_value, 0, 10, 90);
 			tftSt.input_last[2] = in_value;
 		}
 
@@ -886,13 +1057,9 @@ void loop()
 		}
 		if (in_value != tftSt.input_last[3]) {
 			if (in_value == IN_CLOSED) {
-				if (!piezo_busy) {
-					piezo_busy = true;
-					tone(PIEZO_PIN, 4000, PIEZO_DURATION);
-					piezo_timer = millis();
-				}
+				piezo_click();
 			}
-			drawButton(4, IN_DIGITAL, in_value, 0, 10, 140);
+			drawButton(4, IN_DIGITAL, in_value, 0, 10, 110);
 			tftSt.input_last[3] = in_value;
 		}
 		TimerButton = millis();
@@ -909,35 +1076,35 @@ void loop()
 		// Input Analog read resistor divider
 		in_analog = get_input_Analog(IN0);
 		if (in_analog != tftSt.input_voltage_last[0]) {
-			drawInput(1, IN_ANALOG, 0, in_analog, 10, 160);
+			drawInput(1, IN_ANALOG, 0, in_analog, 10, 130);
 			tftSt.input_voltage_last[0] = in_analog;
 		}
 
 		// Input EOL read resistor divider
 		in_value = get_input_EOL(IN0);
 		if (in_value != tftSt.input_last[4]) {
-			drawInput(1, IN_DIGITAL, in_value, 0, 70, 160);
+			drawInput(1, IN_DIGITAL, in_value, 0, 70, 130);
 			tftSt.input_last[4] = in_value;
 		}
 
 		// Analog read resistor divider
 		in_analog = get_input_Analog(IN1);
 		if (in_analog != tftSt.input_voltage_last[1]) {
-			drawInput(2, IN_ANALOG, 0, in_analog, 10, 180);
+			drawInput(2, IN_ANALOG, 0, in_analog, 10, 150);
 			tftSt.input_voltage_last[1] = in_analog;
 		}
 
 		// Input EOL read resistor divider
 		in_value = get_input_EOL(IN1);
 		if (in_value != tftSt.input_last[5]) {
-			drawInput(2, IN_DIGITAL, in_value, 0, 70, 180);
+			drawInput(2, IN_DIGITAL, in_value, 0, 70, 150);
 			tftSt.input_last[5] = in_value;
 		}
 
 		// 5v power analog read
 		in_analog = get_input_Analog(SENSE_VBUS_PIN);
 		if (in_analog != tftSt.input_voltage_last[2]) {
-			drawInput(3, IN_ANALOG, 0, in_analog, 10, 200);
+			drawInput(3, IN_ANALOG, 0, in_analog, 10, 170);
 			tftSt.input_voltage_last[2] = in_analog;
 		}
 
@@ -982,7 +1149,7 @@ void loop()
 	if ((millis() - TimerTemperature) >= TEMPERATURE_UPDATE) {
 		tempF = readTemperature(rom);
 
-		drawTemperatureDetail(100, 80);
+		drawTemperatureDetail(75, 50);
 
 		TimerTemperature = millis();
 		TimerStartConversion = TimerTemperature;
@@ -997,7 +1164,7 @@ void loop()
 
 	// WiFi scan non blocking async mode
 	if ((millis() - Timer_wifi) >= WIFI_UPDATE) {
-		scanWiFi(220, 50);
+		scanWiFi(190, 40);
 
 		Timer_wifi = millis();
 	}
