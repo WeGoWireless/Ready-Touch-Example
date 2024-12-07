@@ -1,6 +1,6 @@
 # Ready Touch 2.8
 
-![Ready Touch 2.8](images/20241116_122627.png)
+![Ready Touch 2.8](images/Thermostat.png)
 
 Desktop or wall mount ESP-32 with 2.8" TFT
 

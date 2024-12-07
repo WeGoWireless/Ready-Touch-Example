@@ -85,7 +85,27 @@
     <ClInclude Include="__vm\.Ready Touch example.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="images\Bottom Notes.psd" />
+    <None Include="images\PCB Bottom.psd" />
+    <None Include="images\Top-Notes.psd" />
+    <None Include="images\Top.psd" />
     <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\20241114_064031.png" />
+    <Image Include="images\20241114_064103.png" />
+    <Image Include="images\20241114_064402.png" />
+    <Image Include="images\20241114_064433.png" />
+    <Image Include="images\20241114_064542.png" />
+    <Image Include="images\20241114_064623.png" />
+    <Image Include="images\20241114_083904.png" />
+    <Image Include="images\20241116_122627.png" />
+    <Image Include="images\Bottom-Notes.jpg" />
+    <Image Include="images\Desktop.jpg" />
+    <Image Include="images\PCB-Bottom.jpg" />
+    <Image Include="images\Top-Notes.jpg" />
+    <Image Include="images\Top.jpg" />
+    <Image Include="images\Wallmount.jpg" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>

@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Ready Touch example.ino" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SansSerif_plain_10.h" />
+    <ClInclude Include="SansSerif_plain_16.h" />
+    <ClInclude Include="__vm\.Ready Touch example.vsarduino.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="images">
+      <UniqueIdentifier>{bf8b43af-d8a7-4115-bfe0-e7cee051f7fe}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\20241114_064031.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\20241114_064103.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\20241114_064402.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\20241114_064433.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\20241114_064542.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\20241114_064623.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\20241114_083904.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\20241116_122627.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\Bottom-Notes.jpg">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\Desktop.jpg">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\PCB-Bottom.jpg">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\Top.jpg">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\Top-Notes.jpg">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\Wallmount.jpg">
+      <Filter>images</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\Bottom Notes.psd">
+      <Filter>images</Filter>
+    </None>
+    <None Include="images\PCB Bottom.psd">
+      <Filter>images</Filter>
+    </None>
+    <None Include="images\Top.psd">
+      <Filter>images</Filter>
+    </None>
+    <None Include="images\Top-Notes.psd">
+      <Filter>images</Filter>
+    </None>
+  </ItemGroup>
+</Project>
