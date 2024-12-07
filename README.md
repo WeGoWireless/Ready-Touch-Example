@@ -33,7 +33,7 @@ Boot reset buttons.
 4 gpio buttons located on the front of the case.
 Prototype area to add your own IC. GPIO and I2C available at that location.
 
-## Ussage:
+## Usage:
 Unit can sit on your desktop for easy development. Desktop case makes it easy to see and press the screen or buttons. Use it for weather,
 fridge monitoring, thermostat, the list goes on.
 
