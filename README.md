@@ -7,7 +7,8 @@ Desktop or wall mount ESP-32 with 2.8" TFT
 ## Quick start:
 Attach power to the DC/AC screw terminal connector located on the back, or plug in power adapter to the jack located inside 5.5x2.1 type
 by removing the back case 2 screws.
-USB power: Unscrew the back case with two screws. Break away the tabs by the USB connector using long nose pliers (see photos)
+
+USB power: Unscrew the back case two screws. Break away the tabs by the USB connector using long nose pliers (see photos)
 to access USB plug with your cable if you wish to use it on your desktop.
 The tabs are left in place incase you want to wall mount for a nice look using OTA for updates instead of USB.
 
@@ -60,6 +61,9 @@ fridge monitoring, thermostat, the list goes on.
 
 ## PCB:
 ![Ready Touch 2.8](images/PCB-Bottom.jpg)
+
+## Purchasing
+WeGoWireless.com website or may be found on EBay and Amazon.
 
 ## Package included:
 ESP32 board (mounted inside enclosure)
