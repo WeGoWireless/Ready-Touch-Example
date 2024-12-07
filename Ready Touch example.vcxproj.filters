@@ -14,34 +14,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="images\20241114_064031.png">
+    <Image Include="images\PCB Top.png">
       <Filter>images</Filter>
     </Image>
-    <Image Include="images\20241114_064103.png">
+    <Image Include="images\Top case.png">
       <Filter>images</Filter>
     </Image>
-    <Image Include="images\20241114_064402.png">
+    <Image Include="images\Back connections.png">
       <Filter>images</Filter>
     </Image>
-    <Image Include="images\20241114_064433.png">
+    <Image Include="images\Desk L bracket.png">
       <Filter>images</Filter>
     </Image>
-    <Image Include="images\20241114_064542.png">
+    <Image Include="images\Wall mount.png">
       <Filter>images</Filter>
     </Image>
-    <Image Include="images\20241114_064623.png">
-      <Filter>images</Filter>
-    </Image>
-    <Image Include="images\20241114_083904.png">
-      <Filter>images</Filter>
-    </Image>
-    <Image Include="images\20241116_122627.png">
+    <Image Include="images\Front USBpng">
       <Filter>images</Filter>
     </Image>
     <Image Include="images\Bottom-Notes.jpg">
-      <Filter>images</Filter>
-    </Image>
-    <Image Include="images\Desktop.jpg">
       <Filter>images</Filter>
     </Image>
     <Image Include="images\PCB-Bottom.jpg">
