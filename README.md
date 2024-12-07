@@ -3,7 +3,7 @@
 ![Ready Touch 2.8](images/Thermostat.png)
 ![Ready Touch 2.8](images/AppExample.png)
 
-Possible applications.                           Included applicaiton located here in this project.
+Possible applications image one. Image two Included applicaiton located here in this project.
 
 Desktop or wall mount ESP-32 with 2.8" TFT
 
