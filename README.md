@@ -36,7 +36,11 @@ Prototype area to add your own IC. GPIO and I2C available at that location.
 ## Usage:
 Unit can sit on your desktop for easy development. Desktop case makes it easy to see and press the screen or buttons. Use it for weather,
 fridge monitoring, thermostat, the list goes on.
+![Ready Touch 2.8](images/Top-Notes.jpg)
+![Ready Touch 2.8](images/Bottom-Notes.jpg)
 
+## PCB:
+![Ready Touch 2.8](images/PCB-Bottom.jpg)
 
 ## Package included:
 ESP32 board (mounted inside enclosure)

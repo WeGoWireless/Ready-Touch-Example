@@ -85,10 +85,6 @@
     <ClInclude Include="__vm\.Ready Touch example.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="images\Bottom Notes.psd" />
-    <None Include="images\PCB Bottom.psd" />
-    <None Include="images\Top-Notes.psd" />
-    <None Include="images\Top.psd" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
