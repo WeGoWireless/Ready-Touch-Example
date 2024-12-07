@@ -47,5 +47,8 @@
     <Image Include="images\Wallmount.jpg">
       <Filter>images</Filter>
     </Image>
+    <Image Include="images\AppExample.png">
+      <Filter>images</Filter>
+    </Image>
   </ItemGroup>
 </Project>
