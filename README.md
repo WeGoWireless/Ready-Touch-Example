@@ -4,6 +4,25 @@
 
 Desktop or wall mount ESP-32 with 2.8" TFT
 
+## Quick start:
+Attach power to the DC/AC screw terminal connector located on the back, or plug in power adapter to the jack located inside 5.5x2.1 type
+by removing the back case 2 screws.
+USB power: Unscrew the back case with two screws. Break away the tabs by the USB connector using long nose pliers (see photos)
+to access USB plug with your cable if you wish to use it on your desktop.
+The tabs are left in place incase you want to wall mount for a nice look using OTA for updates instead of USB.
+
+Power on by pressing center power button for at least one second. A sample application is loaded and source located here.
+
+Example program:
+Press any button to see the display B1 - B4 beep and indicated press.
+Temperature will display on the screen using the on-board DS18B20 sensor via one wire DS248.
+Time will display from the RTC DS3231.
+SD card will be detected when plugged in or removed.
+Lower touch screen buttons control the three relays.
+Press the power button for at least 5 seconds to power off.
+
+Use the included application for examples on GPIO etc programing usage.
+
 ## Product Details:
 esp32 s3 2MB PSRAM | Ready Touch | Development | Desktop Case
 
