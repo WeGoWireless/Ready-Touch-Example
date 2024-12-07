@@ -44,7 +44,7 @@ Plastic enclosure
 Desktop L bracket
 Wallmount bracket
 
-Schematic NOT included. We don't provide technical assistance please make sure you are familiare with the product before purchasing.
+Schematic NOT included. I don't provide technical assistance please make sure you are familiare with the product before purchasing.
 
 Please, for your saftey use only Lithium Ion Polymer Battery with protection like the ones offered on Adafruits site.
 
