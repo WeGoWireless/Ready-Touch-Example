@@ -84,6 +84,9 @@
     <ClInclude Include="SansSerif_plain_16.h" />
     <ClInclude Include="__vm\.Ready Touch example.vsarduino.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+  </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
   </PropertyGroup>
