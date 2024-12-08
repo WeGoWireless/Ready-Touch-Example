@@ -51,4 +51,7 @@
       <Filter>images</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="html.html" />
+  </ItemGroup>
 </Project>

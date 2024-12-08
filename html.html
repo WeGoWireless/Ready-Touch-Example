@@ -1,0 +1,297 @@
+<HTML>
+<HEAD>
+    <TITLE>ReadyTouch 2.8</TITLE>
+    <style>
+        body {
+            background-color: #fff;
+            font-family: sans-serif;
+            color: #333333;
+            font: 14px Helvetica, sans-serif;
+            box-sizing: border-box;
+        }
+
+        #page {
+            margin: 20px;
+            background-color: #ffffff;
+        }
+
+        .container {
+            height: inherit;
+            padding-bottom: 20px;
+        }
+
+        #content {
+            background: #e1e1e1;
+            border-radius: .5em .5em .5em .5em;
+            box-shadow: 1px 7px 7px 1px rgba(0, 0, 0, 0.4);
+            display: block;
+        }
+
+            #content:after {
+                content: " ";
+                display: block;
+                height: 0;
+                clear: both;
+            }
+
+        .header {
+            padding: 20px;
+        }
+
+            .header h1 {
+                padding-bottom: 0.3em;
+                font-size: 45px;
+                font-weight: normal;
+                font-family: Garmond,"sans-serif";
+                text-align: left;
+                margin: 0;
+            }
+
+                .header h1 span {
+                    font-weight: bold;
+                    font-family: Garmond,"sans-serif";
+                    color: #000000;
+                }
+
+        h2 {
+            padding-bottom: 0.2em;
+            border-bottom: 1px solid #eee;
+            margin-top: 2px;
+        }
+
+        .box380 {
+            width: 380px;
+            padding: 20px;
+            margin: 10px 10px 10px 10px;
+            border: 1px solid #ddd;
+            border-radius: 1em 1em 1em 1em;
+            box-shadow: 1px 7px 7px 1px rgba(0, 0, 0, 0.4);
+            background: #ffffff;
+        }
+
+        .left {
+            float: left;
+            clear: left;
+        }
+
+        .right {
+            float: right;
+            clear: right;
+        }
+
+        @media (min-width: 980px) {
+            #page {
+                width: 900px;
+                margin: 0 auto;
+            }
+        }
+
+        button {
+            border-radius: 5px;
+            box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.4);
+            border: none;
+            color: #ffffff;
+            padding: 10px 28px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 1em;
+            margin: 4px 2px;
+            cursor: pointer;
+            outline: none;
+            background-color: rgb(105, 143, 0);
+        }
+
+        #footer {
+            font-size: 15px;
+            text-align: center;
+            margin-bottom: 0;
+        }
+    </style>
+</HEAD>
+<BODY>
+    <div id="page">
+        <div class="header">
+            <h1 style="color:rgb(105, 143, 0)">
+                Ready Touch <span>2.8</span>
+            </h1>
+        </div>
+        <div class="container">
+            <div id="content">
+                <div class="box380 left">
+                    <h2>WiFi Setup</h2>
+                    <p>
+                        <b>Mode: </b><span id="mode" data-bind="text: status.fullMode"></span>
+                    </p>
+                    <div id="wired-view" data-bind="visible: status.isWired()">
+                        <table>
+                            <tr>
+                                <th colspan="2">Network</th>
+                            </tr>
+                            <tbody>
+                                <tr>
+                                    <td>Connected web clients:</td>
+                                    <td data-bind="text: status.ws_clients()"></td>
+                                </tr>
+                                <tr>
+                                    <td>IP Address:</td>
+                                    <td data-bind="text: config.ipaddress(), attr: {href: 'http://'+config.ipaddress()}"></td>
+                                </tr>
+                                <tr>
+                                    <td>Gateway:</td>
+                                    <td data-bind="text: config.gw()"></td>
+                                </tr>
+                                <tr>
+                                    <td>DNS:</td>
+                                    <td data-bind="text: config.dns()"></td>
+                                </tr>
+                                <tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="client-view" data-bind="visible: status.isWifiClient() &amp;&amp; !wifi.canConfigure() &amp;&amp; !wifi.wifiConnecting() &amp;&amp; !status.isWired()">
+                        <table>
+                            <tr>
+                                <th>Network</th>
+                                <th>RSSI dBm</th>
+                                <th>Channel</th>
+                            </tr>
+                            <tbody id="sta-ssid">
+                                <tr data-bind="click: function () { wifi.forceConfig(true); }">
+                                    <td data-bind="text: config.ssid()"></td>
+                                    <td data-bind="text: status.srssi() + '&nbsp;&nbsp;&nbsp;&nbsp;' + (status.srssi() >= -50 ? 100 : (status.srssi() <= -100 ? 0 : 2 * (status.srssi() + 100))) + '%'"></td>
+                                    <td data-bind="text: config.chan()"></td>
+                                </tr>
+                            </tbody>
+                            <tr>
+                                <td>BSSID:</td>
+                                <td colspan="2" data-bind="text: config.bssid()"></td>
+                            </tr>
+                            <tr>
+                                <td>TX Power:</td>
+                                <td colspan="2" data-bind="text: config.txpwr() + ' dBm'"></td>
+                            </tr>
+                            <tr>
+                                <td>Authentication Mode:</td>
+                                <td colspan="2" data-bind="text: config.eauthmode()"></td>
+                            </tr>
+                        </table>
+                        <button data-bind="click: function () { wifi.forceConfig(true); }, style: {'background-color': config.web_color}">Change WiFi network</button>
+                        <button data-bind="click: setAPMode, text: (saveAPModeFetching() ? 'Saving' :  (saveAPModeSuccess() ? 'Saved' : 'AP mode')), disable: saveAPModeFetching, style: {'background-color': config.web_color}">AP mode</button>
+                        <br />
+                        <br />
+                        <table>
+                            <tr>
+                                <th colspan="2">Network</th>
+                            </tr>
+                            <tbody>
+                                <tr>
+                                    <td>Connected web clients:</td>
+                                    <td data-bind="text: status.ws_clients()"></td>
+                                </tr>
+                                <tr>
+                                    <td>IP Address:</td>
+                                    <td data-bind="text: config.ipaddress(), attr: {href: 'http://'+config.ipaddress()}"></td>
+                                </tr>
+                                <tr>
+                                    <td>Gateway:</td>
+                                    <td data-bind="text: config.gw()"></td>
+                                </tr>
+                                <tr>
+                                    <td>DNS:</td>
+                                    <td data-bind="text: config.dns()"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button id="apoff" data-bind="visible: status.isWifiAccessPoint(), click: wifi.turnOffAccessPoint, disable: wifi.turnOffAccessPointFetching, style: {'background-color': config.web_color}">Turn off Access Point</button>
+                    </div>
+                    <div id="ap-view" data-bind="visible: status.isWifiAccessPoint() &amp;&amp; !wifi.canConfigure() &amp;&amp; !wifi.wifiConnecting() &amp;&amp; !status.isWired()">
+                        <table>
+                            <tr>
+                                <th>Network</th>
+                                <th>Channel</th>
+                            </tr>
+                            <tbody id="ap-ssid">
+                                <tr data-bind="click: function () { wifi.forceConfig(true); }">
+                                    <td data-bind="text: config.ssid()"></td>
+                                    <td data-bind="text: config.chan()"></td>
+                                </tr>
+                            </tbody>
+                            <tr>
+                                <td>TX Power:</td>
+                                <td data-bind="text: config.txpwr() + ' dBm'"></td>
+                            </tr>
+                        </table>
+                        <button data-bind="click: function () { wifi.forceConfig(true); }, style: {'background-color': config.web_color}">Change WiFi network</button>
+                        <br />
+                        <br />
+                        <table>
+                            <tr>
+                                <th colspan="2">Network</th>
+                            </tr>
+                            <tbody>
+                                <tr>
+                                    <td>Connected AP clients:</td>
+                                    <td data-bind="text: status.ap_clients()"></td>
+                                </tr>
+                                <tr>
+                                    <td>Connected web clients:</td>
+                                    <td data-bind="text: status.ws_clients()"></td>
+                                </tr>
+                                <tr>
+                                    <td>IP Address:</td>
+                                    <td data-bind="text: config.ipaddress(), attr: {href: 'http://'+config.ipaddress()}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button id="apoff" data-bind="visible: status.isWifiAccessPoint(), click: wifi.turnOffAccessPoint, disable: wifi.turnOffAccessPointFetching, style: {'background-color': config.web_color}">Turn off Access Point</button>
+                    </div>
+                    <div id="ap-scan" data-bind="visible: wifi.canConfigure() &amp;&amp; !wifi.wifiConnecting() &amp;&amp; !status.isWired()">
+                        <p>Connect to network:</p>
+                        <div id="wifiList">
+                            <ul class="list-group" data-bind="foreach: scan.filteredResults, visible: 0 != scan.results().length">
+                                <li class="list-group-item" data-bind="click: $root.wifi.select, css: { active: $root.wifi.selectedNet() === $data }">
+                                    <span data-bind="text: ssid"></span>
+                                    <img width="24px" height="24px" data-bind="attr:{src: 'wifi_signal_'+strength()+'.svg'}" />
+                                </li>
+                            </ul>
+                        </div>
+                        <div data-bind="visible: 0 == scan.results().length">
+                            Scanning...
+                        </div>
+                        <p>
+                            <b>SSID:</b><br>
+                            <input type="text" autocapitalize="none" data-bind="textInput: config.ssid()">
+                        </p>
+                        <p>
+                            <b>Passkey:</b><br>
+                            <input type="text" autocapitalize="none" data-bind="textInput: wifiPassword.value, attr: { type: wifiPassword.show() ? 'text' : 'password' }"><br />
+                            <div>
+                                <input id="wifipassword" type="checkbox" data-bind="checked: wifiPassword.show" />
+                                <label for="wifipassword">Show password</label>
+                            </div>
+                        </p>
+                        <p>
+                            <button data-bind="click: wifi.saveNetwork, text: (wifi.saveNetworkFetching() ? 'Saving' : (wifi.saveNetworkSuccess() ? 'Saved' : 'Connect')), disable: wifi.saveNetworkFetching, style: {'background-color': config.web_color}">Connect</button>
+                        </p>
+                    </div>
+
+                    <div data-bind="visible: wifi.wifiConnecting">
+                        <p>Connecting to WIFI Network...</p>
+                    </div>
+                </div>
+                <div class="box380 right">
+
+                </div>
+
+            </div>
+            <div id="footer">
+                <br>
+                <b>Powered by <a href="http://WeGoWireless.com.com">WeGoWireless.com</a></b>
+                <br>
+                <b>Version: </b>V%appVersion%<span></span>
+            </div>
+        </div>
+</BODY>
+</HTML>
+
