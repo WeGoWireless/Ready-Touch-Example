@@ -1,3 +1,4 @@
+const char home[] PROGMEM = R"rawliteral(
 <HTML>
 <HEAD>
     <TITLE>ReadyTouch 2.8</TITLE>
@@ -189,6 +190,17 @@
                 border-bottom-right-radius: .25rem;
                 border-bottom-left-radius: .25rem;
             }
+        .loader {
+            z-index: 10000;
+            border: 8px solid #b5b5b5; /* Grey */
+            border-top: 8px solid #3498db; /* Blue */
+            border-bottom: 8px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 240px;
+            height: 240px;
+            animation: spin 2s linear infinite;
+            display: none;
+        }
        #footer {
             font-size: 15px;
             text-align: center;
@@ -271,7 +283,7 @@
                     <div id="sta_view">
                         <table>
                             <tr>
-                                <th>STA Network</th>
+                                <th>Network</th>
                                 <th>RSSI dBm</th>
                                 <th>Channel</th>
                             </tr>
@@ -289,11 +301,12 @@
                                 <td colspan="2"><span id="txpwr"></span>&nbsp;dBm</td>
                             </tr>
                             <tr>
-                                <td>PSK:</td>
-                                <td colspan="2" id="PSK"></td>
+                                <td>Authentication Mode:</td>
+                                <td colspan="2" data-bind="text: config.eauthmode()"></td>
                             </tr>
                         </table>
                         <button id="wifiChange">Change WiFi network</button>
+                        <button data-bind="click: setAPMode, text: (saveAPModeFetching() ? 'Saving' :  (saveAPModeSuccess() ? 'Saved' : 'AP mode')), disable: saveAPModeFetching, style: {'background-color': config.web_color}">AP mode</button>
                         <br />
                         <br />
                         <table>
@@ -315,11 +328,12 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <button id="apoff" data-bind="visible: status.isWifiAccessPoint(), click: wifi.turnOffAccessPoint, disable: wifi.turnOffAccessPointFetching, style: {'background-color': config.web_color}">Turn off Access Point</button>
                     </div>
                     <div id="ap_view" style="display: none">
                         <table>
                             <tr>
-                                <th>AP Network</th>
+                                <th>Network</th>
                                 <th>Channel</th>
                             </tr>
                             <tr>
@@ -331,6 +345,7 @@
                                 <td data-bind="text: config.txpwr() + ' dBm'"></td>
                             </tr>
                         </table>
+                        <button id="btn_wifiChange2">Change WiFi network</button>
                     </div>
                     <div id="ap_scan_view" style="display: none">
                         <p>Connect to network:</p>
@@ -363,6 +378,7 @@
                     </div>
                 </div>
             </div>
+            <div id="loader" class="loader"></div>
             <div id="footer">
                 <br>
                 <b>Powered by <a href="http://WeGoWireless.com.com">WeGoWireless.com</a></b>
@@ -381,16 +397,16 @@
             }
 
             // If serving from ESP32
-            //var baseHost = window.location.hostname;
-            //var basePort = window.location.port;
-            //var baseProtocol = window.location.protocol;
-            //var endpoint = "//" + baseHost;
+            var baseHost = window.location.hostname;
+            var basePort = window.location.port;
+            var baseProtocol = window.location.protocol;
+            var endpoint = "//" + baseHost;
 
             //If serving from file baseProtocol is file:/ /
-            var baseHost = "10.10.10.47";
-            var basePort = 80;
-            var baseProtocol = "http";
-            var endpoint = baseProtocol + "://" + baseHost;
+            //var baseHost = "10.10.10.47";
+            //var basePort = 80;
+            //var baseProtocol = "http";
+            //var endpoint = baseProtocol + "://" + baseHost;
 
             var reloadPeriod = 3000;
             var settingRunning = false;
@@ -449,7 +465,6 @@
                             ip.innerText = res.ip;
                             gw.innerText = res.gw;
                             dns.innerText = res.dns;
-
                             sta_ssid.value = res.sta_ssid;
                             sta_pass.value = res.sta_pass;
 
@@ -512,9 +527,9 @@
                                     scanImg.setAttribute('width', '24px');
                                     scanImg.setAttribute('heigth', '24px');
                                     // from ESP
-                                    //scanImg.setAttribute('class', 'wifi_signal_' + strength(scanResults[i].rssi));
+                                    scanImg.setAttribute('class', 'wifi_signal_' + strength(scanResults[i].rssi));
                                     // from file
-                                    scanImg.setAttribute('src', 'wifi_signal_' + strength(scanResults[i].rssi) + '.svg');
+                                    //scanImg.setAttribute('src', 'wifi_signal_' + strength(scanResults[i].rssi) + '.svg');
                                     scanImg.setAttribute('style', 'float: right;');
                                     scanLi.appendChild(scanImg);
 
@@ -558,12 +573,15 @@
                     function ajaxCb(x, d) {
                         return function () {
                             if (x.readyState == 4) {
+                                ge("loader").style.display = "none";
                                 d.callback(x.status, x.responseText);
                                 if (that.queue.length === 0) that.running = false;
                                 if (that.running) that._request(that.queue.shift());
                             }
                         }
                     }
+
+                    ge("loader").style.display = "block";
 
                     var p = "";
                     if (req.params instanceof FormData) {
@@ -605,6 +623,13 @@
             }
             var requests = new QueuedRequester();
 
+            function httpPostProcessRequest(status, responseText) {
+                if (status != 200)
+                    alert("ERROR[" + status + "]: " + responseText);
+                //else
+                    //tree.refreshPath(path.value);
+            }
+
             function onBodyLoad() {
                 const appVersion = ge("appVersion");
 
@@ -624,7 +649,7 @@
                 const dns = ge("dns");
                 const sta_ssid = ge("sta_ssid");
                 const sta_pass = ge("sta_pass");
-                const btn_wifiSave = ge("wifiSave");
+
                 const btn_wifiChange = ge("wifiChange");
 
                 const scanList = ge("scanList");
@@ -637,24 +662,34 @@
                     run_WiFi_Scan();
                 }
 
-                function httpPostSaveNetwork(status, responseText) {
-                    if (status != 200) {
-                        alert("ERROR[" + status + "]: " + responseText);
-                    } else {
-                        btn_wifiSave.innerText = "Saved";
-                    }
-                }
-                                
+                const btn_wifiSave = ge("wifiSave");
                 btn_wifiSave.onclick = function (e) {
                     btn_wifiSave.innerText = 'Saving';
                     if (sta_ssid === "") {
                         alert("Please select network");
                     } else {
-                        btn_wifiSave.innerText = "Saving";
                         var formData = new FormData();
                         formData.append("ssid", sta_ssid.value);
                         formData.append("pass", sta_pass.value);
-                        requests.add("POST", endpoint + "/savenetwork", formData, httpPostSaveNetwork);
+                        requests.add("POST", endpoint + "/savenetwork", formData, httpPostProcessRequest);
+
+                        //.post(endpoint + "/savenetwork", { ssid: sta_ssid, pass: sta_pass }, function () {
+                            // HACK: Almost certainly won't get a status update with client connected set to false so manually clear it here
+                            //self.status.wifi_client_connected(false);
+
+                            // Done with setting the config
+                            //self.forceConfig(false);
+
+                            // Wait for a new WiFi connection
+                            //self.wifiConnecting(true);
+
+                            // And indiccate the save was successful
+                            //self.saveNetworkSuccess(true);
+                        //}).fail(function () {
+                        //    alert("Failed to save WiFi config");
+                        //}).always(function () {
+                       //     self.saveNetworkFetching(false);
+                       //});
                     }
                 }
                 run();
@@ -715,4 +750,4 @@
         </script>
 </BODY>
 </HTML>
-
+)rawliteral";

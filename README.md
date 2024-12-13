@@ -18,14 +18,14 @@ The tabs are left in place incase you want to wall mount for a nice look using O
 Power on by pressing center power button for at least one second. A sample application is loaded and source located here.
 
 Example program:
-Press any button to see the display B1 - B4 beep and indicated press.
-Temperature will display on the screen using the on-board DS18B20 sensor via one wire DS248.
-Time will display from the RTC DS3231.
-SD card will be detected when plugged in or removed.
-Lower touch screen buttons control the three relays.
-Two inputs displayed in analog reading and OPEN CLOSED status.
-One input to monitor 5v or external power when on battery. Can be read as analog or digital.
-Press the power button for at least 5 seconds to power off.
+- Press any button to see the display B1 - B4 beep and indicated press.
+- Temperature will display on the screen using the on-board DS18B20 sensor via one wire DS248.
+- Time will display from the RTC DS3231.
+- SD card will be detected when plugged in or removed.
+- Lower touch screen buttons control the three relays.
+- Two inputs displayed in analog reading and OPEN CLOSED status.
+- One input to monitor 5v or external power when on battery. Can be read as analog or digital.
+- Press the power button for at least 5 seconds to power off.
 
 Use the included application examples on GPIO etc programing usage.
 
@@ -81,6 +81,11 @@ Schematic NOT included. I don't provide technical assistance please make sure yo
 Please, for your saftey use only Lithium Ion Polymer Battery with protection like the ones offered on Adafruits site.
 
 Documention can be found on the WeGoWireless.com website.
+
+## Software
+A sample arduino app is located here in this repository. Gives examples on how to setup io, tft, wifi etc. A web page example is included.
+![Ready Touch 2.8](images/Firmware Web Page Main 640.png)
+![Ready Touch 2.8](images/Firmware Web Page Scan 640.png)
 
 ## From the creator
 Thank you,

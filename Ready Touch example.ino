@@ -15,8 +15,6 @@ Use Adafruit Feather ESP32-S3 2MB via board manager or other compatible board.
 
 Download install the below libraries
 */
-#include <HTTP_Method.h>
-#include <Uri.h>
 #include <Arduino.h>
 
 // Voltage regulator power to real time clock DS3231, SD card slot, LCD backlight, DSB18B20, optional SCD41, One Wire DS241
@@ -72,15 +70,17 @@ const uint8_t PROGMEM REL3_RESET_PIN = 46;
 char appVersion[80];
 
 #include <Wire.h>  // ESP32 lib
-
 #include <WiFi.h>  // ESP32 lib
 #include <WiFiClient.h>  // ESP32 lib
 #include <WebServer.h>  // ESP32 lib
+#include <ArduinoOTA.h>  // ESP32 lib
 WebServer server(80);
 const char* softAP_ssid = "Ready Touch 2.8";
 const char* softAP_password = "";
 IPAddress apIP(192, 168, 4, 1);
 IPAddress apNetMsk(255, 255, 255, 0);
+char sta_ssid[31];
+char sta_pass[31];
 
 // TFT
 #include <Adafruit_ILI9341.h>  // https://github.com/adafruit/Adafruit_ILI9341
@@ -90,6 +90,13 @@ Adafruit_ILI9341 display_gfx = Adafruit_ILI9341(VSPI_TFT_CS, VSPI_TFT_DC);
 #include "SansSerif_plain_10.h"
 #include "SansSerif_plain_16.h"
 #include "SansSerif_plain_numbers_90.h"
+
+#include "html.h"
+#include "images/wifi_signal_1.svg.gz.h"
+#include "images/wifi_signal_2.svg.gz.h"
+#include "images/wifi_signal_3.svg.gz.h"
+#include "images/wifi_signal_4.svg.gz.h"
+#include "images/wifi_signal_5.svg.gz.h"
 
 // Touch screen
 #include <XPT2046_Touchscreen.h>  // by Paul Stoffregenesp 
@@ -103,6 +110,8 @@ const uint16_t TS_MAXY = 3600;
 
 #include <SD.h>    // ESP32 lib
 #include <SPI.h>  // ESP32 lib
+#include <Preferences.h>  // ESP32 lib
+Preferences Prefs;
 
 // One wire DS248
 #include <Adafruit_DS248x.h>
@@ -124,6 +133,12 @@ bool SD_inserted = false;
 bool FoundMax = false;
 char wifiScanBuff[33];
 bool wifiScanPrint = false;
+char scanJson[1565] = "[";  // wifi scan for web page 1565 plus /0 = 20 networks if all had 32 char ssid, this is not going to happen.
+bool mode_ETH = false;
+bool mode_AP = false;
+bool mode_STA = false;
+float TxPower = 0;
+uint8_t sta_authmode = 0;
 
 bool piezo_busy = false;
 uint32_t piezo_timer;
@@ -137,8 +152,9 @@ GFXcanvas16 canvasOutput(104, 20);
 GFXcanvas16 canvasBattery(85, 22);
 GFXcanvas16 canvasRelayButton(70, 25);
 GFXcanvas1 canvasTemperature(112, 70);
-GFXcanvas1 canvasSD(100, 12);
+GFXcanvas1 canvasSD(100, 24);
 GFXcanvas1 canvasWiFi(160, 170);
+GFXcanvas1 canvasWiFiQuality(50, 12);
 
 struct tft_struct
 {
@@ -149,6 +165,7 @@ struct tft_struct
 	float lastBattV = 0;
 	float Temperature = 0;
 	int8_t drawSD = 0;					   // 0=not drawn, 1 mounted, 2 not mounted
+	int8_t drawQuality = 255;
 
 	uint16_t btnRelay1X = 10, btnRelay1Y = 210, btnRelay1W = 50, btnRelay1H = 50;
 	uint16_t btnRelay2X = 100, btnRelay2Y = 210, btnRelay2W = 50, btnRelay2H = 50;
@@ -210,8 +227,8 @@ uint32_t TimerButton;
 const uint32_t WIFI_UPDATE = 5 * 1000;
 uint32_t Timer_wifi;
 
-const uint32_t TIME_UPDATE = 1000;
-uint32_t Timer_time;
+const uint32_t TFT_UPDATE = 1000;
+uint32_t Timer_tft;
 
 uint16_t BATTERY_UPDATE = 60 * 1000;
 int32_t Timer_battery = millis() - BATTERY_UPDATE;
@@ -221,9 +238,13 @@ int32_t TimerTemperature;
 const uint32_t START_CONVERSION_UPDATE = 50 * 1000;
 uint32_t TimerStartConversion;
 
-void setupWiFi();
+void setupPreferences();
 void handleRoot();
+void handleScan();
+void handleSaveNetwork();
 void startAP();
+void startClient();
+void startServer();
 void scanWiFi(uint16_t x, uint16_t y);
 void setupRTC();
 void setupMAX();
@@ -234,6 +255,7 @@ void Strat_Conversion(uint8_t* rom);
 void setupTFT();
 void setTouchRotation(uint8_t n);
 void drawWiFi(uint16_t x, uint16_t y);
+void drawWifiQuality(uint16_t x, uint16_t y);
 void drawBattery(uint16_t x, uint16_t y, bool initDraw = false);
 void drawTemperatureDetail(uint16_t x, uint16_t y, bool initDraw = false);
 void drawSD(uint16_t x, uint16_t y);
@@ -272,8 +294,13 @@ void setup()
 	// Wire setup
 	Wire.setPins(I2C_SDA_0, I2C_SCL_0);
 
-	setupWiFi();
+	get_build_date_time();
+	setupPreferences();
+	readPreferences();
 	startAP();
+	startClient();
+	startServer();
+	setupOTA();
 	setupRTC();
 	setupMAX();
 	setupDS248X();
@@ -288,6 +315,34 @@ void setup()
 	drawGreenBtn(tftSt.btnRelay2X, tftSt.btnRelay2Y);
 	drawGreenBtn(tftSt.btnRelay3X, tftSt.btnRelay3Y);
 	relaySetup();
+}
+
+void setupPreferences() {
+	Prefs.begin("Ready_Touch", false); // Open our namespace (or create it if it doesn't exist) in RO mode.
+
+	bool tpInit = Prefs.isKey("nvsInit"); // Test for the existence of the "already initialized" key.
+
+	if (tpInit == false) {	// If tpInit is 'false', the key "nvsInit" does not yet exist therefore this
+							//  must be our first-time run. We need to set up our Preferences namespace keys. So...
+		Prefs.end();
+		Prefs.begin("Ready_Touch", false); // reopen it in RW mode.
+
+		Prefs.putBool("nvsInit", true);  // Create the "already initialized"  key and store a value.
+		Prefs.end();                             // Close the namespace in RW mode and...
+		Prefs.begin("Ready_Touch", true);
+	}
+}
+
+void readPreferences() {
+	Prefs.getString("sta_ssid", sta_ssid, 30);
+	Prefs.getString("sta_pass", sta_pass, 30);
+}
+
+void writePreferences() {
+	Prefs.putString("sta_ssid", sta_ssid);
+	Prefs.putString("sta_pass", sta_pass);
+	Prefs.end();
+	readPreferences();
 }
 
 void get_build_date_time() {
@@ -307,305 +362,22 @@ void get_build_date_time() {
 	sprintf(appVersion, "%02d/%02d/%04d %02d:%02d:%02d", month, day, year, hour, min, sec);
 }
 
-const char html[] PROGMEM = R"rawliteral(
-<HTML>
-<HEAD>
-    <TITLE>Ready Touch 2.8</TITLE>
-    <style>
-        body {
-            background-color: #fff;
-            font-family: sans-serif;
-            color: #333333;
-            font: 14px Helvetica, sans-serif;
-            box-sizing: border-box;
-        }
+//static void WiFiStationConnected(WiFiEvent_t event, wifi_sta_connected info) {
+//	sta_authmode = info.authmode;
+//}
 
-        #page {
-            margin: 20px;
-            background-color: #ffffff;
-        }
+void startClient() {
+	if (sizeof(sta_ssid[0]) != 0) {
+		Serial.println("start client");
+		WiFi.disconnect(true);
+		WiFi.hostname("Ready Touch 2.8");
+		WiFi.enableSTA(true);
+		WiFi.begin(sta_ssid, sta_pass);
+		mode_STA = true;
 
-        .container {
-            height: inherit;
-            padding-bottom: 20px;
-        }
-
-        #content {
-            background: #e1e1e1;
-            border-radius: .5em .5em .5em .5em;
-            box-shadow: 1px 7px 7px 1px rgba(0, 0, 0, 0.4);
-            display: block;
-        }
-
-            #content:after {
-                content: " ";
-                display: block;
-                height: 0;
-                clear: both;
-            }
-
-        .header {
-            padding: 20px;
-        }
-
-            .header h1 {
-                padding-bottom: 0.3em;
-                font-size: 45px;
-                font-weight: normal;
-                font-family: Garmond,"sans-serif";
-                text-align: left;
-                margin: 0;
-            }
-
-                .header h1 span {
-                    font-weight: bold;
-                    font-family: Garmond,"sans-serif";
-                    color: #000000;
-                }
-
-        h2 {
-            padding-bottom: 0.2em;
-            border-bottom: 1px solid #eee;
-            margin-top: 2px;
-        }
-
-        .box380 {
-            width: 380px;
-            padding: 20px;
-            margin: 10px 10px 10px 10px;
-            border: 1px solid #ddd;
-            border-radius: 1em 1em 1em 1em;
-            box-shadow: 1px 7px 7px 1px rgba(0, 0, 0, 0.4);
-            background: #ffffff;
-        }
-
-        .left {
-            float: left;
-            clear: left;
-        }
-
-        .right {
-            float: right;
-            clear: right;
-        }
-
-        @media (min-width: 980px) {
-            #page {
-                width: 900px;
-                margin: 0 auto;
-            }
-        }
-
-        button {
-            border-radius: 5px;
-            box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.4);
-            border: none;
-            color: #ffffff;
-            padding: 10px 28px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 1em;
-            margin: 4px 2px;
-            cursor: pointer;
-            outline: none;
-            background-color: rgb(105, 143, 0);
-        }
-
-        #footer {
-            font-size: 15px;
-            text-align: center;
-            margin-bottom: 0;
-        }
-    </style>
-</HEAD>
-<BODY>
-    <div id="page">
-        <div class="header">
-            <h1 style="color:rgb(105, 143, 0)">
-                Ready Touch <span>2.8</span>
-            </h1>
-        </div>
-        <div class="container">
-            <div id="content">
-                <div class="box380 left">
-                    <h2>WiFi Setup</h2>
-                    <p>
-                        <b>Mode: </b><span id="mode" data-bind="text: status.fullMode"></span>
-                    </p>
-                    <div id="wired-view" data-bind="visible: status.isWired()">
-                        <table>
-                            <tr>
-                                <th colspan="2">Network</th>
-                            </tr>
-                            <tbody>
-                                <tr>
-                                    <td>Connected web clients:</td>
-                                    <td data-bind="text: status.ws_clients()"></td>
-                                </tr>
-                                <tr>
-                                    <td>IP Address:</td>
-                                    <td data-bind="text: config.ipaddress(), attr: {href: 'http://'+config.ipaddress()}"></td>
-                                </tr>
-                                <tr>
-                                    <td>Gateway:</td>
-                                    <td data-bind="text: config.gw()"></td>
-                                </tr>
-                                <tr>
-                                    <td>DNS:</td>
-                                    <td data-bind="text: config.dns()"></td>
-                                </tr>
-                                <tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="client-view" data-bind="visible: status.isWifiClient() &amp;&amp; !wifi.canConfigure() &amp;&amp; !wifi.wifiConnecting() &amp;&amp; !status.isWired()">
-                        <table>
-                            <tr>
-                                <th>Network</th>
-                                <th>RSSI dBm</th>
-                                <th>Channel</th>
-                            </tr>
-                            <tbody id="sta-ssid">
-                                <tr data-bind="click: function () { wifi.forceConfig(true); }">
-                                    <td data-bind="text: config.ssid()"></td>
-                                    <td data-bind="text: status.srssi() + '&nbsp;&nbsp;&nbsp;&nbsp;' + (status.srssi() >= -50 ? 100 : (status.srssi() <= -100 ? 0 : 2 * (status.srssi() + 100))) + '%'"></td>
-                                    <td data-bind="text: config.chan()"></td>
-                                </tr>
-                            </tbody>
-                            <tr>
-                                <td>BSSID:</td>
-                                <td colspan="2" data-bind="text: config.bssid()"></td>
-                            </tr>
-                            <tr>
-                                <td>TX Power:</td>
-                                <td colspan="2" data-bind="text: config.txpwr() + ' dBm'"></td>
-                            </tr>
-                            <tr>
-                                <td>Authentication Mode:</td>
-                                <td colspan="2" data-bind="text: config.eauthmode()"></td>
-                            </tr>
-                        </table>
-                        <button data-bind="click: function () { wifi.forceConfig(true); }, style: {'background-color': config.web_color}">Change WiFi network</button>
-                        <button data-bind="click: setAPMode, text: (saveAPModeFetching() ? 'Saving' :  (saveAPModeSuccess() ? 'Saved' : 'AP mode')), disable: saveAPModeFetching, style: {'background-color': config.web_color}">AP mode</button>
-                        <br />
-                        <br />
-                        <table>
-                            <tr>
-                                <th colspan="2">Network</th>
-                            </tr>
-                            <tbody>
-                                <tr>
-                                    <td>Connected web clients:</td>
-                                    <td data-bind="text: status.ws_clients()"></td>
-                                </tr>
-                                <tr>
-                                    <td>IP Address:</td>
-                                    <td data-bind="text: config.ipaddress(), attr: {href: 'http://'+config.ipaddress()}"></td>
-                                </tr>
-                                <tr>
-                                    <td>Gateway:</td>
-                                    <td data-bind="text: config.gw()"></td>
-                                </tr>
-                                <tr>
-                                    <td>DNS:</td>
-                                    <td data-bind="text: config.dns()"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <button id="apoff" data-bind="visible: status.isWifiAccessPoint(), click: wifi.turnOffAccessPoint, disable: wifi.turnOffAccessPointFetching, style: {'background-color': config.web_color}">Turn off Access Point</button>
-                    </div>
-                    <div id="ap-view" data-bind="visible: status.isWifiAccessPoint() &amp;&amp; !wifi.canConfigure() &amp;&amp; !wifi.wifiConnecting() &amp;&amp; !status.isWired()">
-                        <table>
-                            <tr>
-                                <th>Network</th>
-                                <th>Channel</th>
-                            </tr>
-                            <tbody id="ap-ssid">
-                                <tr data-bind="click: function () { wifi.forceConfig(true); }">
-                                    <td data-bind="text: config.ssid()"></td>
-                                    <td data-bind="text: config.chan()"></td>
-                                </tr>
-                            </tbody>
-                            <tr>
-                                <td>TX Power:</td>
-                                <td data-bind="text: config.txpwr() + ' dBm'"></td>
-                            </tr>
-                        </table>
-                        <button data-bind="click: function () { wifi.forceConfig(true); }, style: {'background-color': config.web_color}">Change WiFi network</button>
-                        <br />
-                        <br />
-                        <table>
-                            <tr>
-                                <th colspan="2">Network</th>
-                            </tr>
-                            <tbody>
-                                <tr>
-                                    <td>Connected AP clients:</td>
-                                    <td data-bind="text: status.ap_clients()"></td>
-                                </tr>
-                                <tr>
-                                    <td>Connected web clients:</td>
-                                    <td data-bind="text: status.ws_clients()"></td>
-                                </tr>
-                                <tr>
-                                    <td>IP Address:</td>
-                                    <td data-bind="text: config.ipaddress(), attr: {href: 'http://'+config.ipaddress()}"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <button id="apoff" data-bind="visible: status.isWifiAccessPoint(), click: wifi.turnOffAccessPoint, disable: wifi.turnOffAccessPointFetching, style: {'background-color': config.web_color}">Turn off Access Point</button>
-                    </div>
-                    <div id="ap-scan" data-bind="visible: wifi.canConfigure() &amp;&amp; !wifi.wifiConnecting() &amp;&amp; !status.isWired()">
-                        <p>Connect to network:</p>
-                        <div id="wifiList">
-                            <ul class="list-group" data-bind="foreach: scan.filteredResults, visible: 0 != scan.results().length">
-                                <li class="list-group-item" data-bind="click: $root.wifi.select, css: { active: $root.wifi.selectedNet() === $data }">
-                                    <span data-bind="text: ssid"></span>
-                                    <img width="24px" height="24px" data-bind="attr:{src: 'wifi_signal_'+strength()+'.svg'}" />
-                                </li>
-                            </ul>
-                        </div>
-                        <div data-bind="visible: 0 == scan.results().length">
-                            Scanning...
-                        </div>
-                        <p>
-                            <b>SSID:</b><br>
-                            <input type="text" autocapitalize="none" data-bind="textInput: config.ssid()">
-                        </p>
-                        <p>
-                            <b>Passkey:</b><br>
-                            <input type="text" autocapitalize="none" data-bind="textInput: wifiPassword.value, attr: { type: wifiPassword.show() ? 'text' : 'password' }"><br />
-                            <div>
-                                <input id="wifipassword" type="checkbox" data-bind="checked: wifiPassword.show" />
-                                <label for="wifipassword">Show password</label>
-                            </div>
-                        </p>
-                        <p>
-                            <button data-bind="click: wifi.saveNetwork, text: (wifi.saveNetworkFetching() ? 'Saving' : (wifi.saveNetworkSuccess() ? 'Saved' : 'Connect')), disable: wifi.saveNetworkFetching, style: {'background-color': config.web_color}">Connect</button>
-                        </p>
-                    </div>
-
-                    <div data-bind="visible: wifi.wifiConnecting">
-                        <p>Connecting to WIFI Network...</p>
-                    </div>
-                </div>
-                <div class="box380 right">
-
-                </div>
-
-            </div>
-            <div id="footer">
-                <br>
-                <b>Powered by <a href="http://WeGoWireless.com.com">WeGoWireless.com</a></b>
-                <br>
-                <b>Version: </b>V%appVersion%<span></span>
-            </div>
-        </div>
-</BODY>
-</HTML>
-)rawliteral";
-
+		//WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
+	}
+}
 
 // -------------------------------------------------------------------
 // Start Access Point
@@ -616,46 +388,263 @@ void startAP() {
 	WiFi.enableAP(true);
 	WiFi.softAPConfig(apIP, apIP, apNetMsk);
 	WiFi.softAP(softAP_ssid, softAP_password, 1, 0, 4);
+	mode_AP = true;
 
-	// enable CORS header in webserver results
-	server.enableCORS(true);
-	server.on("/", HTTP_GET, handleRoot);
-	//server.on("/edit", HTTP_POST, []() {
-	//	returnOK();
-	//	}, handleFileUpload);
-	 
-	//get heap status, analog input value and all GPIO statuses in one json call
-	server.on("/all", HTTP_GET, []() {
-		String json = "{";
-		json += "\"heap\":" + String(ESP.getFreeHeap());
-		json += ", \"analog\":" + String(analogRead(SENSE_VBUS_PIN));
-		json += ", \"gpio\":" + String((uint32_t)(0));
-		json += "}";
-		server.send(200, "text/json", json);
-		json = String();
-		});
-	server.onNotFound(handleNotFound);
-	server.begin();
-
+	// display on webpage
+	switch (WiFi.getTxPower()) {
+	case WIFI_POWER_19_5dBm:
+		TxPower = 19.5;
+		break;
+	case WIFI_POWER_19dBm:
+		TxPower = 19;
+		break;
+	case WIFI_POWER_18_5dBm:
+		TxPower = 18.5;
+		break;
+	case WIFI_POWER_17dBm:
+		TxPower = 17;
+		break;
+	case WIFI_POWER_15dBm:
+		TxPower = 15;
+		break;
+	case WIFI_POWER_13dBm:
+		TxPower = 13;
+		break;
+	case WIFI_POWER_11dBm:
+		TxPower = 11;
+		break;
+	case WIFI_POWER_8_5dBm:
+		TxPower = 8.5;
+		break;
+	case WIFI_POWER_7dBm:
+		TxPower = 7;
+		break;
+	case WIFI_POWER_5dBm:
+		TxPower = 5;
+		break;
+	case WIFI_POWER_2dBm:
+		TxPower = 2;
+		break;
+	case WIFI_POWER_MINUS_1dBm:
+		TxPower = -4;
+		break;
+	}
 }
 
-// HTML for WiFi setup screen
+void startServer() {
+	server.enableCORS(true);
+	server.enableCrossOrigin(true);
+
+	server.on("/", HTTP_GET, handleRoot);
+	server.on("/status", HTTP_GET, handleStatus);
+	server.on("/scan", HTTP_GET, handleScan);
+	server.on("/savenetwork", handleSaveNetwork);
+	server.on("/wifi_signal_1.svg", HTTP_GET, []() {
+		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_1_SVG_GZ);
+		});
+	server.on("/wifi_signal_2.svg", HTTP_GET, []() {
+		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_2_SVG_GZ);
+		});
+	server.on("/wifi_signal_3.svg", HTTP_GET, []() {
+		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_3_SVG_GZ);
+		});
+	server.on("/wifi_signal_4.svg", HTTP_GET, []() {
+		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_4_SVG_GZ);
+		});
+	server.on("/wifi_signal_5.svg", HTTP_GET, []() {
+		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_5_SVG_GZ);
+		});
+
+	server.onNotFound(handleNotFound);
+	server.begin();
+}
+
+// -------------------------------------------------------------------
+// Returns web root json
+// url: /
+// -------------------------------------------------------------------
 void handleRoot() {
-	//String s;
-	//s = sHtmlHeader();
-	//F Macro - http://arduino-esp8266.readthedocs.io/en/latest/PROGMEM.html
-	//s += F("<h2>WiFi Setup</h2><div>MAC: ");
-	//s += sGetMacAddress();
-	//s += F("</div><br /><div>Select WiFi to connect to:</div><form autocomplete=\"on\" method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"\\save\"><div><label for=\"ssid\">SSID:</label><select id=\"ssid\" name=\"ssid\">");
-	//s += sNetworks;
-	//s += F("</select></div><div><label for=\"pass\">Password:</label><input minlength=\"2\" maxlength=\"32\" type=\"password\" name=\"pass\"/></div><input type=\"submit\" name=\"save\" value=\"Save\" style=\"background-color: #002B54; color: #FFFFFF; height: 39px; width: 58px;\"/><div style=\"font-size: 10px\">To refresh available networks restart the controller.</div><div style=\"font-size: 10px\">You will need to reconnect your WiFi after a restart.</div></form>");
-	//s += sHtmlFooter();
-	server.send(200, "text/html", html);
+	server.send(200, "text/html", home);
+}
+
+// -------------------------------------------------------------------
+// Returns scan json
+// url: /scan
+// -------------------------------------------------------------------
+void handleScan() {
+	server.send(200, "text/json", scanJson);
+}
+
+void returnFail(String msg) {
+	server.send(500, "text/plain", msg + "\r\n");
+}
+
+void returnOK() {
+	server.send(200, "text/plain", "");
+}
+
+void handleSaveNetwork() {
+	char buff[31];
+
+	if (server.args() == 0) {
+		return returnFail("BAD ARGS");
+	}
+
+	if (server.hasArg("ssid")) {
+		server.arg("ssid").toCharArray(buff, sizeof(server.arg("ssid"))+1);
+		strcpy(sta_ssid, buff);
+	}
+
+	if (server.hasArg("pass")) {
+		server.arg("pass").toCharArray(buff, sizeof(server.arg("pass"))+1);
+		strcpy(sta_pass, buff);
+	}
+	returnOK();
+	writePreferences();
+
+	startClient();
+}
+
+void setupOTA() {
+	ArduinoOTA
+		.onStart([]() {
+		String type;
+		if (ArduinoOTA.getCommand() == U_FLASH) {
+			type = "sketch";
+		}
+
+		Serial.println("Start updating " + type);
+			})
+		.onEnd([]() {
+		Serial.println("\nEnd");
+			})
+		.onProgress([](unsigned int progress, unsigned int total) {
+		Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+			})
+		.onError([](ota_error_t error) {
+		Serial.printf("Error[%u]: ", error);
+		if (error == OTA_AUTH_ERROR) {
+			Serial.println("Auth Failed");
+		}
+		else if (error == OTA_BEGIN_ERROR) {
+			Serial.println("Begin Failed");
+		}
+		else if (error == OTA_CONNECT_ERROR) {
+			Serial.println("Connect Failed");
+		}
+		else if (error == OTA_RECEIVE_ERROR) {
+			Serial.println("Receive Failed");
+		}
+		else if (error == OTA_END_ERROR) {
+			Serial.println("End Failed");
+		}
+			});
+
+	ArduinoOTA.begin();
+}
+
+// -------------------------------------------------------------------
+// Returns status json
+// url: /status
+// -------------------------------------------------------------------
+void handleStatus() {
+	// create our own json documnet
+	char buff[33];  // max size to hold ssid 32 + /0
+	char json[500] = "{";
+
+	
+	strcat(json, "\"appVersion\":\"");
+	strcat(json, appVersion);
+	strcat(json, "\"");
+
+	strcat(json, ",\"sta_ssid\":\"");
+	strcat(json, sta_ssid);
+	strcat(json, "\"");
+	strcat(json, ",\"sta_pass\":\"");
+	strcat(json, sta_pass);
+	strcat(json, "\"");
+
+	strcat(json, ",\"in_0\":");
+	sprintf(buff, "%.1f", get_input_Analog(IN0));
+	strcat(json, buff);
+	strcat(json, ",\"in_1\":");
+	sprintf(buff, "%.1f", get_input_Analog(IN1));
+	strcat(json, buff);
+	strcat(json, ",\"vbus\":");
+	sprintf(buff, "%.1f", get_input_Analog(SENSE_VBUS_PIN));
+	strcat(json, buff);
+
+	if (mode_ETH) {
+		strcat(json, ",\"mode\":\"ETH\"");
+	}
+	else if (mode_STA && !mode_AP) {
+		strcat(json, ",\"mode\":\"STA\"");
+	}
+	else if (mode_AP && !mode_STA) {
+		strcat(json, ",\"mode\":\"AP\"");
+	}
+	else if (mode_AP && mode_STA) {
+		strcat(json, ",\"mode\":\"STA+AP\"");
+	}
+	else {
+		strcat(json, ",\"mode\":\"\"");
+	}
+
+	strcat(json, ",\"srssi\":");
+	sprintf(buff, "%d", WiFi.RSSI());
+	strcat(json, buff);
+	strcat(json, ",\"ssid\":\"");
+	WiFi.SSID().toCharArray(buff, WiFi.SSID().length() + 1);
+	strcat(json, buff);
+	strcat(json, "\",\"chan\":");
+	sprintf(buff, "%d", WiFi.channel());
+	strcat(json, buff);
+	strcat(json, ",\"bssid\":\"");
+	sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", WiFi.BSSID()[0], WiFi.BSSID()[1], WiFi.BSSID()[2], WiFi.BSSID()[3], WiFi.BSSID()[4], WiFi.BSSID()[5]);
+	strcat(json, buff);
+	strcat(json, "\",\"txpwr\":");
+	sprintf(buff, "%d", TxPower);
+	strcat(json, buff);
+	//strcat(json, ",\"enc\":");
+	//sprintf(buff, "%s", sta_authmode);
+	//strcat(json, buff);
+	strcat(json, ",\"ip\":\"");
+	sprintf(buff, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+	strcat(json, buff);
+	strcat(json, "\",\"gw\":\"");
+	sprintf(buff, "%d.%d.%d.%d", WiFi.gatewayIP()[0], WiFi.gatewayIP()[1], WiFi.gatewayIP()[2], WiFi.gatewayIP()[3]);
+	strcat(json, buff);
+	strcat(json, "\",\"dns\":\"");
+	sprintf(buff, "%d.%d.%d.%d", WiFi.dnsIP()[0], WiFi.dnsIP()[1], WiFi.dnsIP()[2], WiFi.dnsIP()[3]);
+	strcat(json, buff);
+	strcat(json, "\"");
+
+	strcat(json, "}");
+
+	server.send(200, "text/json", json);
 }
 
 void handleNotFound() {
-	const char notFound[] = { "File Not Found\n\n" };
-	server.send(404, "text/plain", notFound);
+	char buff[50];
+
+	char message[200] = "Not found\n\nURI: ";
+	server.uri().toCharArray(buff, server.uri().length() + 1);
+	strcat(message, buff);
+	strcat(message, "\nMethod: ");
+	strcat(message, (server.method() == HTTP_GET) ? "GET" : "POST");
+	strcat(message, "\nArguments: ");
+	sprintf(buff, "%d", server.args());
+	strcat(message, buff);
+	strcat(message, "\n");
+	for (uint8_t i = 0; i < server.args(); i++) {
+		server.argName(i).toCharArray(buff, server.argName(i).length() + 1);
+		strcat(message, buff);
+		strcat(message, ": ");
+		server.arg(i).toCharArray(buff, server.arg(i).length() + 1);
+		strcat(message, buff);
+		strcat(message, "\n");
+	}
+	server.send(404, "text/plain", message);
 }
 
 void setTouchRotation(uint8_t n) {
@@ -677,11 +666,6 @@ void piezo_click() {
 		tone(PIEZO_PIN, 4000, PIEZO_DURATION);
 		piezo_timer = millis();
 	}
-}
-
-void setupWiFi() {
-	WiFi.mode(WIFI_STA);
-	WiFi.disconnect();
 }
 
 // run WiFi scan in non blocking async mode. Check for complete and return results.
@@ -727,8 +711,28 @@ void scanWiFi(uint16_t x, uint16_t y) {
 			Serial.println("Nr | SSID                             | RSSI | CH | Encryption");
 		}
 
+		// reinet array
+		//char scanJson[1565] = "[";
+		scanJson[0] = '[';
+		scanJson[1] = (char)0;
 		canvasLine = 0;
 		for (int i = 0; i < n; ++i) {
+			// create scanJson doc for web page wifi scan
+			//char scanJson[1565] = "[";
+
+			if (WiFi.RSSI(i) >= -80) {  // only add if dbm strong enough
+				if (sizeof(scanJson) - strlen(scanJson) >= 52) { // make sure we have room to add to scanJson array
+					if (i) strcat(scanJson, ",");
+					strcat(scanJson, "{\"rssi\":");
+					sprintf(buff, "%d", WiFi.RSSI(i));
+					strcat(scanJson, buff);
+					strcat(scanJson, ",\"ssid\":\"");
+					WiFi.SSID(i).toCharArray(buff, WiFi.SSID(i).length() + 1);
+					strcat(scanJson, buff);
+					strcat(scanJson, "\"}");
+				}
+			}
+
 			// Print SSID and RSSI for each network found
 			if (wifiScanPrint) {
 				Serial.printf("%2d", i + 1);
@@ -753,6 +757,7 @@ void scanWiFi(uint16_t x, uint16_t y) {
 				}
 				Serial.println();
 			}
+
 			canvasWiFi.setFont(&SansSerif_plain_10);
 			sprintf(buff, "%d", WiFi.RSSI(i));
 			canvasWiFi.setCursor(0, canvasLine * 12);
@@ -765,6 +770,8 @@ void scanWiFi(uint16_t x, uint16_t y) {
 
 			canvasLine += 1;
 		}
+		strcat(scanJson, "]");
+
 		display_gfx.drawBitmap(x, y, canvasWiFi.getBuffer(), 160, 170, ILI9341_WHITE, ILI9341_BLACK);
 		if (wifiScanPrint) {
 			Serial.println("");
@@ -786,6 +793,42 @@ void scanWiFi(uint16_t x, uint16_t y) {
 	}
 }
 
+// converts the dBm to a range between 0 and 100%
+int8_t getWifiQuality() {
+	int32_t dbm = WiFi.RSSI();
+	if (dbm <= -100) {
+		return 0;
+	}
+	else if (dbm >= -50) {
+		return 100;
+	}
+	else {
+		return 2 * (dbm + 100);
+	}
+}
+
+void drawWifiQuality(uint16_t x, uint16_t y) {
+	int8_t quality = getWifiQuality();
+	if (tftSt.drawQuality != quality) {
+		tftSt.drawQuality = quality;
+		canvasWiFiQuality.fillScreen(ILI9341_BLACK);
+		//canvasWiFiQuality.drawRect(0, 0, 48, 10, ILI9341_WHITE); // just for testing the size of our area
+		for (int8_t i = 0; i < 4; i++) {
+			for (int8_t j = 0; j < 2 * (i + 1); j++) {
+				if (quality > i * 25 || j == 0) {
+					canvasWiFiQuality.drawPixel(39 + 2 * i, 10 - j, ILI9341_WHITE);
+				}
+			}
+		}
+		canvasWiFiQuality.setFont(&SansSerif_plain_10);
+		canvasWiFiQuality.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+		canvasWiFiQuality.setCursor(0, 12);
+		canvasWiFiQuality.print(String(quality) + "%");
+		// 48 x 11 orginal exact fit
+		// 1x 10font 7h
+		display_gfx.drawBitmap(x, y, canvasWiFiQuality.getBuffer(), 50, 12, ILI9341_WHITE, ILI9341_BLACK);
+	}
+}
 
 void drawWiFi(uint16_t x, uint16_t y) {
 	//canvasWiFi.fillScreen(ILI9341_BLACK);
@@ -807,11 +850,11 @@ void drawSD(uint16_t x, uint16_t y) {
 
 		canvasSD.setFont(&SansSerif_plain_10);
 		canvasSD.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-		canvasSD.setCursor(22, 11);
+		canvasSD.setCursor(0, 22);
 		canvasSD.print(file_humanReadableSize(SD.cardSize()));
 
 
-		display_gfx.drawBitmap(x, y, canvasSD.getBuffer(), 100, 12, ILI9341_WHITE, ILI9341_BLACK);
+		display_gfx.drawBitmap(x, y, canvasSD.getBuffer(), 100, 24, ILI9341_WHITE, ILI9341_BLACK);
 		tftSt.drawSD = 1;
 	}
 	else if (SD_inserted == false && tftSt.drawSD == 1 || SD_inserted == false && tftSt.drawSD == 0) {
@@ -824,7 +867,7 @@ void drawSD(uint16_t x, uint16_t y) {
 		canvasSD.drawFastVLine(4, 1, 3, ILI9341_RED); // 3 pins top
 		canvasSD.drawFastVLine(6, 2, 3, ILI9341_RED); // 3 pins top
 		canvasSD.drawFastVLine(8, 2, 3, ILI9341_RED); // 3 pins top
-		display_gfx.drawBitmap(x, y, canvasSD.getBuffer(), 100, 12, ILI9341_RED, ILI9341_BLACK);
+		display_gfx.drawBitmap(x, y, canvasSD.getBuffer(), 100, 24, ILI9341_RED, ILI9341_BLACK);
 		tftSt.drawSD = 2;
 	}
 }
@@ -1383,9 +1426,11 @@ void loop()
 		drawSD(220, 0);
 	}
 
-	if ((millis() - Timer_time) >= TIME_UPDATE) {
+	if ((millis() - Timer_tft) >= TFT_UPDATE) {
+		drawWifiQuality(270, 0);
 		drawTime(115, 0);
-		Timer_time = millis();
+
+		Timer_tft = millis();
 	}
 
 	if ((millis() - TimerButton) >= IO_BUTTON_UPDATE) {
@@ -1554,4 +1599,5 @@ void loop()
 	}
 
 	server.handleClient();
+	ArduinoOTA.handle();
 }

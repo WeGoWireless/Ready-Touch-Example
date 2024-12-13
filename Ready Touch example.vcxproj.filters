@@ -7,6 +7,22 @@
     <ClInclude Include="SansSerif_plain_10.h" />
     <ClInclude Include="SansSerif_plain_16.h" />
     <ClInclude Include="__vm\.Ready Touch example.vsarduino.h" />
+    <ClInclude Include="images\wifi_signal_1.svg.gz.h">
+      <Filter>images</Filter>
+    </ClInclude>
+    <ClInclude Include="images\wifi_signal_2.svg.gz.h">
+      <Filter>images</Filter>
+    </ClInclude>
+    <ClInclude Include="images\wifi_signal_3.svg.gz.h">
+      <Filter>images</Filter>
+    </ClInclude>
+    <ClInclude Include="images\wifi_signal_4.svg.gz.h">
+      <Filter>images</Filter>
+    </ClInclude>
+    <ClInclude Include="images\wifi_signal_5.svg.gz.h">
+      <Filter>images</Filter>
+    </ClInclude>
+    <ClInclude Include="html.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="images">
@@ -50,8 +66,15 @@
     <Image Include="images\AppExample.png">
       <Filter>images</Filter>
     </Image>
+    <Image Include="images\Firmware Web Page Main 640.png">
+      <Filter>images</Filter>
+    </Image>
+    <Image Include="images\Firmware Web Page Scan 640.png">
+      <Filter>images</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="html.html" />
+    <None Include="README.md" />
   </ItemGroup>
 </Project>
