@@ -66,10 +66,10 @@
     <Image Include="images\AppExample.png">
       <Filter>images</Filter>
     </Image>
-    <Image Include="images\Firmware Web Page Main 640.png">
+    <Image Include="images\FirmwareWebPageMain640.png">
       <Filter>images</Filter>
     </Image>
-    <Image Include="images\Firmware Web Page Scan 640.png">
+    <Image Include="images\FirmwareWebPageScan640.png">
       <Filter>images</Filter>
     </Image>
   </ItemGroup>

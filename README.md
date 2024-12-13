@@ -84,8 +84,8 @@ Documention can be found on the WeGoWireless.com website.
 
 ## Software
 A sample arduino app is located here in this repository. Gives examples on how to setup io, tft, wifi etc. A web page example is included.
-![Ready Touch 2.8]("images/Firmware Web Page Main 640.png")
-![Ready Touch 2.8]("images/Firmware Web Page Scan 640.png")
+![Ready Touch 2.8](images/FirmwareWebPageMain640.png)
+![Ready Touch 2.8](images/FirmwareWebPageScan640.png)
 
 ## From the creator
 Thank you,
