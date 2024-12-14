@@ -76,5 +76,10 @@
   <ItemGroup>
     <None Include="html.html" />
     <None Include="README.md" />
+    <None Include="wifi_signal_1.svg" />
+    <None Include="wifi_signal_2.svg" />
+    <None Include="wifi_signal_3.svg" />
+    <None Include="wifi_signal_4.svg" />
+    <None Include="wifi_signal_5.svg" />
   </ItemGroup>
 </Project>

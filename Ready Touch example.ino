@@ -71,10 +71,13 @@ char appVersion[80];
 
 #include <Wire.h>  // ESP32 lib
 #include <WiFi.h>  // ESP32 lib
+#include <ESPmDNS.h> // ESP32 lib
 #include <WiFiClient.h>  // ESP32 lib
 #include <WebServer.h>  // ESP32 lib
+#include <DNSServer.h>   // ESP32 lib
 #include <ArduinoOTA.h>  // ESP32 lib
 WebServer server(80);
+DNSServer dnsServer;                  // Create class DNS server, captive portal re-direct
 const char* softAP_ssid = "Ready Touch 2.8";
 const char* softAP_password = "";
 IPAddress apIP(192, 168, 4, 1);
@@ -245,6 +248,7 @@ void handleSaveNetwork();
 void startAP();
 void startClient();
 void startServer();
+void setupOTA();
 void scanWiFi(uint16_t x, uint16_t y);
 void setupRTC();
 void setupMAX();
@@ -432,6 +436,22 @@ void startAP() {
 }
 
 void startServer() {
+	if (MDNS.begin("ReadyTouch")) {
+		MDNS.addService("http", "tcp", 80);
+	}
+	else {
+		Serial.println("Error setting up MDNS responder!");
+	}
+
+	// by default DNSServer is started serving any "*" domain name. It will reply
+	// AccessPoint's IP to all DNS request (this is required for Captive Portal detection)
+	if (dnsServer.start(53, "*", apIP)) {
+		Serial.println("Started DNS server");
+	}
+	else {
+		Serial.println("Err: Can't start DNS server!");
+	}
+
 	server.enableCORS(true);
 	server.enableCrossOrigin(true);
 
@@ -439,32 +459,16 @@ void startServer() {
 	server.on("/status", HTTP_GET, handleStatus);
 	server.on("/scan", HTTP_GET, handleScan);
 	server.on("/savenetwork", handleSaveNetwork);
-	server.on("/wifi_signal_1.svg", HTTP_GET, []() {
-		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_1_SVG_GZ);
-		});
-	server.on("/wifi_signal_2.svg", HTTP_GET, []() {
-		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_2_SVG_GZ);
-		});
-	server.on("/wifi_signal_3.svg", HTTP_GET, []() {
-		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_3_SVG_GZ);
-		});
-	server.on("/wifi_signal_4.svg", HTTP_GET, []() {
-		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_4_SVG_GZ);
-		});
-	server.on("/wifi_signal_5.svg", HTTP_GET, []() {
-		server.send(200, "image/png", CONTENT_WIFI_SIGNAL_5_SVG_GZ);
-		});
-
 	server.onNotFound(handleNotFound);
 	server.begin();
 }
 
 // -------------------------------------------------------------------
-// Returns web root json
+// Returns web root
 // url: /
 // -------------------------------------------------------------------
 void handleRoot() {
-	server.send(200, "text/html", home);
+	server.send_P(200, "text/html", home);
 }
 
 // -------------------------------------------------------------------
@@ -540,6 +544,7 @@ void setupOTA() {
 		}
 			});
 
+	ArduinoOTA.setHostname(softAP_ssid);
 	ArduinoOTA.begin();
 }
 

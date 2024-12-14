@@ -84,6 +84,19 @@ Documention can be found on the WeGoWireless.com website.
 
 ## Software
 A sample arduino app is located here in this repository. Gives examples on how to setup io, tft, wifi etc. A web page example is included.
+Setup:
+1. Connect your phone or laptop to WiFi "Ready Touch 2.8"
+2. Open a web browser url at http://192.168.4.1" no https.
+3. You can view inputs and network here.
+4. Press the "Change WiFi Network" to scan for available networks. click on an SSID then enter the password in the input box. 
+5. Press the "Connect" button. The ESP32 will connect to your access point and you can access the ESP32 via IP address on your network.
+ESPmDNS is installed so you can also connect using "http://ReadyTouch.local"
+You will need Windows bonjour service, install Bonjour (http://www.apple.com/support/bonjour/).
+
+DNSServer is installed
+
+No need to cut the tabs on the case for USB if you wish to just update the software using OTA.
+OTA server is running on "ready Trouch 2.8" host name.
 
 ![Ready Touch 2.8](images/FirmwareWebPageMain640.png)
 ![Ready Touch 2.8](images/FirmwareWebPageScan640.png)

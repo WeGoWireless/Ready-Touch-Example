@@ -190,21 +190,65 @@ const char home[] PROGMEM = R"rawliteral(
                 border-bottom-right-radius: .25rem;
                 border-bottom-left-radius: .25rem;
             }
-        .loader {
-            z-index: 10000;
-            border: 8px solid #b5b5b5; /* Grey */
-            border-top: 8px solid #3498db; /* Blue */
-            border-bottom: 8px solid #3498db; /* Blue */
-            border-radius: 50%;
-            width: 240px;
-            height: 240px;
-            animation: spin 2s linear infinite;
-            display: none;
-        }
        #footer {
             font-size: 15px;
             text-align: center;
             margin-bottom: 0;
+        }
+
+        .wifi_signal_1 {
+            margin-left: 2%;
+            padding: 0 0 0 26px;
+            cursor: pointer;
+            display: inline-block;
+            height: 24px;
+            vertical-align: bottom;
+            background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8c3ZnIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6Y2M9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zIyIgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiB2ZXJzaW9uPSIxLjEiIGlkPSJzdmc4NjUiIHNvZGlwb2RpOmRvY25hbWU9IndpZmlfc2lnbmFsXzEuc3ZnIiBpbmtzY2FwZTp2ZXJzaW9uPSIwLjkyLjMgKDI0MDU1NDYsIDIwMTgtMDMtMTEpIj4NCiAgPG1ldGFkYXRhIGlkPSJtZXRhZGF0YTg3MSI+DQogICAgPHJkZjpSREY+DQogICAgICA8Y2M6V29yayByZGY6YWJvdXQ9IiI+DQogICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2Uvc3ZnK3htbDwvZGM6Zm9ybWF0Pg0KICAgICAgICA8ZGM6dHlwZSByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIi8+DQogICAgICAgIDxkYzp0aXRsZS8+DQogICAgICA8L2NjOldvcms+DQogICAgPC9yZGY6UkRGPg0KICA8L21ldGFkYXRhPg0KICA8ZGVmcyBpZD0iZGVmczg2OSIvPg0KICA8c29kaXBvZGk6bmFtZWR2aWV3IHBhZ2Vjb2xvcj0iI2ZmZmZmZiIgYm9yZGVyY29sb3I9IiM2NjY2NjYiIGJvcmRlcm9wYWNpdHk9IjEiIG9iamVjdHRvbGVyYW5jZT0iMTAiIGdyaWR0b2xlcmFuY2U9IjEwIiBndWlkZXRvbGVyYW5jZT0iMTAiIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIiBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIiBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9IjEzMjAiIGlkPSJuYW1lZHZpZXc4NjciIHNob3dncmlkPSJmYWxzZSIgaW5rc2NhcGU6em9vbT0iNDcuNDU4MzMzIiBpbmtzY2FwZTpjeD0iMTIiIGlua3NjYXBlOmN5PSIxMiIgaW5rc2NhcGU6d2luZG93LXg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy15PSIyNyIgaW5rc2NhcGU6d2luZG93LW1heGltaXplZD0iMSIgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ic3ZnODY1Ii8+DQogIDxwYXRoIGQ9Ik0gNC41MDQsMTMuNTcyIDIuOTk5LDEyLjA4MyBDIDUuMiw5LjI3OCA4LjQxMiw3LjUgMTIsNy41IGMgMy41ODgsMCA2LjgsMS43NzkgOSw0LjU4MyBsIC0xLjUwNCwxLjQ4OSBDIDE3LjY2MSwxMS4yMzQgMTQuOTg0LDkuNzUgMTIsOS43NSBjIC0yLjk4NCwwIC01LjY2MSwxLjQ4NCAtNy40OTYsMy44MjIgeiIgaWQ9InBhdGg4OTgiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCiAgPHBhdGggZD0ibSAxMiwxNC4yNSBjIDEuNzkxLDAgMy4zOTcsMC44OTEgNC40OTgsMi4yOTMgTCAxOCwxNS4wNTUgQyAxNi41MzMsMTMuMTg2IDE0LjM5MiwxMiAxMiwxMiA5LjYwOCwxMiA3LjQ2NywxMy4xODYgNiwxNS4wNTUgbCAxLjUwMiwxLjQ4OCBDIDguNjAzLDE1LjE0MSAxMC4yMDksMTQuMjUgMTIsMTQuMjUgWiIgaWQ9InBhdGg4OTYiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCiAgPHBhdGggZD0ibSAxMiwxNi41IGMgLTEuMTk2LDAgLTIuMjU4LDAuNjAyIC0yLjk5LDEuNTM2IEwgMTIsMjEgMTQuOTksMTguMDM3IEMgMTQuMjU4LDE3LjEwMiAxMy4xOTYsMTYuNSAxMiwxNi41IFoiIGlkPSJwYXRoODk0IiBzdHlsZT0iZmlsbDojY2NjY2NjIi8+DQogIDxwYXRoIGQ9Im0gMTIsNS4yNSBjIDQuMTc5LDAgNy45MjcsMi4wNzggMTAuNDk1LDUuMzUxIEwgMjQsOS4xMSBDIDIxLjA2NSw1LjM3MSAxNi43ODMsMyAxMiwzIDcuMjE3LDMgMi45MzUsNS4zNzEgMCw5LjExIGwgMS41MDUsMS40OTEgQyA0LjA3Myw3LjMyOCA3LjgyMSw1LjI1IDEyLDUuMjUgWiIgaWQ9InBhdGg4NjMiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCjwvc3ZnPg==");
+            background-position: 0px 0px;
+        }
+
+        .wifi_signal_2 {
+            margin-left: 2%;
+            padding: 0 0 0 26px;
+            cursor: pointer;
+            display: inline-block;
+            height: 24px;
+            vertical-align: bottom;
+            background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8c3ZnIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6Y2M9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zIyIgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiB2ZXJzaW9uPSIxLjEiIGlkPSJzdmc4NjUiIHNvZGlwb2RpOmRvY25hbWU9IndpZmlfc2lnbmFsXzIuc3ZnIiBpbmtzY2FwZTp2ZXJzaW9uPSIwLjkyLjMgKDI0MDU1NDYsIDIwMTgtMDMtMTEpIj4NCiAgPG1ldGFkYXRhIGlkPSJtZXRhZGF0YTg3MSI+DQogICAgPHJkZjpSREY+DQogICAgICA8Y2M6V29yayByZGY6YWJvdXQ9IiI+DQogICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2Uvc3ZnK3htbDwvZGM6Zm9ybWF0Pg0KICAgICAgICA8ZGM6dHlwZSByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIi8+DQogICAgICAgIDxkYzp0aXRsZS8+DQogICAgICA8L2NjOldvcms+DQogICAgPC9yZGY6UkRGPg0KICA8L21ldGFkYXRhPg0KICA8ZGVmcyBpZD0iZGVmczg2OSIvPg0KICA8c29kaXBvZGk6bmFtZWR2aWV3IHBhZ2Vjb2xvcj0iI2ZmZmZmZiIgYm9yZGVyY29sb3I9IiM2NjY2NjYiIGJvcmRlcm9wYWNpdHk9IjEiIG9iamVjdHRvbGVyYW5jZT0iMTAiIGdyaWR0b2xlcmFuY2U9IjEwIiBndWlkZXRvbGVyYW5jZT0iMTAiIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIiBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIiBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9IjEzMjAiIGlkPSJuYW1lZHZpZXc4NjciIHNob3dncmlkPSJmYWxzZSIgaW5rc2NhcGU6em9vbT0iNDcuNDU4MzMzIiBpbmtzY2FwZTpjeD0iMTIiIGlua3NjYXBlOmN5PSIxMiIgaW5rc2NhcGU6d2luZG93LXg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy15PSIyNyIgaW5rc2NhcGU6d2luZG93LW1heGltaXplZD0iMSIgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ic3ZnODY1Ii8+DQogIDxwYXRoIGQ9Ik0gNC41MDQsMTMuNTcyIDIuOTk5LDEyLjA4MyBDIDUuMiw5LjI3OCA4LjQxMiw3LjUgMTIsNy41IGMgMy41ODgsMCA2LjgsMS43NzkgOSw0LjU4MyBsIC0xLjUwNCwxLjQ4OSBDIDE3LjY2MSwxMS4yMzQgMTQuOTg0LDkuNzUgMTIsOS43NSBjIC0yLjk4NCwwIC01LjY2MSwxLjQ4NCAtNy40OTYsMy44MjIgeiIgaWQ9InBhdGg4OTgiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCiAgPHBhdGggZD0ibSAxMiwxNC4yNSBjIDEuNzkxLDAgMy4zOTcsMC44OTEgNC40OTgsMi4yOTMgTCAxOCwxNS4wNTUgQyAxNi41MzMsMTMuMTg2IDE0LjM5MiwxMiAxMiwxMiA5LjYwOCwxMiA3LjQ2NywxMy4xODYgNiwxNS4wNTUgbCAxLjUwMiwxLjQ4OCBDIDguNjAzLDE1LjE0MSAxMC4yMDksMTQuMjUgMTIsMTQuMjUgWiIgaWQ9InBhdGg4OTYiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCiAgPHBhdGggZD0ibSAxMiwxNi41IGMgLTEuMTk2LDAgLTIuMjU4LDAuNjAyIC0yLjk5LDEuNTM2IEwgMTIsMjEgMTQuOTksMTguMDM3IEMgMTQuMjU4LDE3LjEwMiAxMy4xOTYsMTYuNSAxMiwxNi41IFoiIGlkPSJwYXRoODk0Ii8+DQogIDxwYXRoIGQ9Im0gMTIsNS4yNSBjIDQuMTc5LDAgNy45MjcsMi4wNzggMTAuNDk1LDUuMzUxIEwgMjQsOS4xMSBDIDIxLjA2NSw1LjM3MSAxNi43ODMsMyAxMiwzIDcuMjE3LDMgMi45MzUsNS4zNzEgMCw5LjExIGwgMS41MDUsMS40OTEgQyA0LjA3Myw3LjMyOCA3LjgyMSw1LjI1IDEyLDUuMjUgWiIgaWQ9InBhdGg4NjMiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCjwvc3ZnPg==");
+            background-position: 0px 0px;
+        }
+
+        .wifi_signal_3 {
+            margin-left: 2%;
+            padding: 0 0 0 26px;
+            cursor: pointer;
+            display: inline-block;
+            height: 24px;
+            vertical-align: bottom;
+            background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8c3ZnIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6Y2M9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zIyIgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiB2ZXJzaW9uPSIxLjEiIGlkPSJzdmc4NjUiIHNvZGlwb2RpOmRvY25hbWU9IndpZmlfc2lnbmFsXzMuc3ZnIiBpbmtzY2FwZTp2ZXJzaW9uPSIwLjkyLjMgKDI0MDU1NDYsIDIwMTgtMDMtMTEpIj4NCiAgPG1ldGFkYXRhIGlkPSJtZXRhZGF0YTg3MSI+DQogICAgPHJkZjpSREY+DQogICAgICA8Y2M6V29yayByZGY6YWJvdXQ9IiI+DQogICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2Uvc3ZnK3htbDwvZGM6Zm9ybWF0Pg0KICAgICAgICA8ZGM6dHlwZSByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIi8+DQogICAgICAgIDxkYzp0aXRsZS8+DQogICAgICA8L2NjOldvcms+DQogICAgPC9yZGY6UkRGPg0KICA8L21ldGFkYXRhPg0KICA8ZGVmcyBpZD0iZGVmczg2OSIvPg0KICA8c29kaXBvZGk6bmFtZWR2aWV3IHBhZ2Vjb2xvcj0iI2ZmZmZmZiIgYm9yZGVyY29sb3I9IiM2NjY2NjYiIGJvcmRlcm9wYWNpdHk9IjEiIG9iamVjdHRvbGVyYW5jZT0iMTAiIGdyaWR0b2xlcmFuY2U9IjEwIiBndWlkZXRvbGVyYW5jZT0iMTAiIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIiBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIiBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9IjEzMjAiIGlkPSJuYW1lZHZpZXc4NjciIHNob3dncmlkPSJmYWxzZSIgaW5rc2NhcGU6em9vbT0iNDcuNDU4MzMzIiBpbmtzY2FwZTpjeD0iMTIiIGlua3NjYXBlOmN5PSIxMiIgaW5rc2NhcGU6d2luZG93LXg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy15PSIyNyIgaW5rc2NhcGU6d2luZG93LW1heGltaXplZD0iMSIgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ic3ZnODY1Ii8+DQogIDxwYXRoIGQ9Ik0gNC41MDQsMTMuNTcyIDIuOTk5LDEyLjA4MyBDIDUuMiw5LjI3OCA4LjQxMiw3LjUgMTIsNy41IGMgMy41ODgsMCA2LjgsMS43NzkgOSw0LjU4MyBsIC0xLjUwNCwxLjQ4OSBDIDE3LjY2MSwxMS4yMzQgMTQuOTg0LDkuNzUgMTIsOS43NSBjIC0yLjk4NCwwIC01LjY2MSwxLjQ4NCAtNy40OTYsMy44MjIgeiIgaWQ9InBhdGg4OTgiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCiAgPHBhdGggZD0ibSAxMiwxNC4yNSBjIDEuNzkxLDAgMy4zOTcsMC44OTEgNC40OTgsMi4yOTMgTCAxOCwxNS4wNTUgQyAxNi41MzMsMTMuMTg2IDE0LjM5MiwxMiAxMiwxMiA5LjYwOCwxMiA3LjQ2NywxMy4xODYgNiwxNS4wNTUgbCAxLjUwMiwxLjQ4OCBDIDguNjAzLDE1LjE0MSAxMC4yMDksMTQuMjUgMTIsMTQuMjUgWiIgaWQ9InBhdGg4OTYiLz4NCiAgPHBhdGggZD0ibSAxMiwxNi41IGMgLTEuMTk2LDAgLTIuMjU4LDAuNjAyIC0yLjk5LDEuNTM2IEwgMTIsMjEgMTQuOTksMTguMDM3IEMgMTQuMjU4LDE3LjEwMiAxMy4xOTYsMTYuNSAxMiwxNi41IFoiIGlkPSJwYXRoODk0Ii8+DQogIDxwYXRoIGQ9Im0gMTIsNS4yNSBjIDQuMTc5LDAgNy45MjcsMi4wNzggMTAuNDk1LDUuMzUxIEwgMjQsOS4xMSBDIDIxLjA2NSw1LjM3MSAxNi43ODMsMyAxMiwzIDcuMjE3LDMgMi45MzUsNS4zNzEgMCw5LjExIGwgMS41MDUsMS40OTEgQyA0LjA3Myw3LjMyOCA3LjgyMSw1LjI1IDEyLDUuMjUgWiIgaWQ9InBhdGg4NjMiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCjwvc3ZnPg==");
+            background-position: 0px 0px;
+        }
+
+        .wifi_signal_4 {
+            margin-left: 2%;
+            padding: 0 0 0 26px;
+            cursor: pointer;
+            display: inline-block;
+            height: 24px;
+            vertical-align: bottom;
+            background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8c3ZnIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6Y2M9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zIyIgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiB2ZXJzaW9uPSIxLjEiIGlkPSJzdmc4NjUiIHNvZGlwb2RpOmRvY25hbWU9IndpZmlfc2lnbmFsXzQuc3ZnIiBpbmtzY2FwZTp2ZXJzaW9uPSIwLjkyLjMgKDI0MDU1NDYsIDIwMTgtMDMtMTEpIj4NCiAgPG1ldGFkYXRhIGlkPSJtZXRhZGF0YTg3MSI+DQogICAgPHJkZjpSREY+DQogICAgICA8Y2M6V29yayByZGY6YWJvdXQ9IiI+DQogICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2Uvc3ZnK3htbDwvZGM6Zm9ybWF0Pg0KICAgICAgICA8ZGM6dHlwZSByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIi8+DQogICAgICAgIDxkYzp0aXRsZS8+DQogICAgICA8L2NjOldvcms+DQogICAgPC9yZGY6UkRGPg0KICA8L21ldGFkYXRhPg0KICA8ZGVmcyBpZD0iZGVmczg2OSIvPg0KICA8c29kaXBvZGk6bmFtZWR2aWV3IHBhZ2Vjb2xvcj0iI2ZmZmZmZiIgYm9yZGVyY29sb3I9IiM2NjY2NjYiIGJvcmRlcm9wYWNpdHk9IjEiIG9iamVjdHRvbGVyYW5jZT0iMTAiIGdyaWR0b2xlcmFuY2U9IjEwIiBndWlkZXRvbGVyYW5jZT0iMTAiIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIiBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIiBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9IjEzMjAiIGlkPSJuYW1lZHZpZXc4NjciIHNob3dncmlkPSJmYWxzZSIgaW5rc2NhcGU6em9vbT0iNDcuNDU4MzMzIiBpbmtzY2FwZTpjeD0iMTIiIGlua3NjYXBlOmN5PSIxMiIgaW5rc2NhcGU6d2luZG93LXg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy15PSIyNyIgaW5rc2NhcGU6d2luZG93LW1heGltaXplZD0iMSIgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ic3ZnODY1Ii8+DQogIDxwYXRoIGQ9Ik0gNC41MDQsMTMuNTcyIDIuOTk5LDEyLjA4MyBDIDUuMiw5LjI3OCA4LjQxMiw3LjUgMTIsNy41IGMgMy41ODgsMCA2LjgsMS43NzkgOSw0LjU4MyBsIC0xLjUwNCwxLjQ4OSBDIDE3LjY2MSwxMS4yMzQgMTQuOTg0LDkuNzUgMTIsOS43NSBjIC0yLjk4NCwwIC01LjY2MSwxLjQ4NCAtNy40OTYsMy44MjIgeiIgaWQ9InBhdGg4OTgiLz4NCiAgPHBhdGggZD0ibSAxMiwxNC4yNSBjIDEuNzkxLDAgMy4zOTcsMC44OTEgNC40OTgsMi4yOTMgTCAxOCwxNS4wNTUgQyAxNi41MzMsMTMuMTg2IDE0LjM5MiwxMiAxMiwxMiA5LjYwOCwxMiA3LjQ2NywxMy4xODYgNiwxNS4wNTUgbCAxLjUwMiwxLjQ4OCBDIDguNjAzLDE1LjE0MSAxMC4yMDksMTQuMjUgMTIsMTQuMjUgWiIgaWQ9InBhdGg4OTYiLz4NCiAgPHBhdGggZD0ibSAxMiwxNi41IGMgLTEuMTk2LDAgLTIuMjU4LDAuNjAyIC0yLjk5LDEuNTM2IEwgMTIsMjEgMTQuOTksMTguMDM3IEMgMTQuMjU4LDE3LjEwMiAxMy4xOTYsMTYuNSAxMiwxNi41IFoiIGlkPSJwYXRoODk0Ii8+DQogIDxwYXRoIGQ9Im0gMTIsNS4yNSBjIDQuMTc5LDAgNy45MjcsMi4wNzggMTAuNDk1LDUuMzUxIEwgMjQsOS4xMSBDIDIxLjA2NSw1LjM3MSAxNi43ODMsMyAxMiwzIDcuMjE3LDMgMi45MzUsNS4zNzEgMCw5LjExIGwgMS41MDUsMS40OTEgQyA0LjA3Myw3LjMyOCA3LjgyMSw1LjI1IDEyLDUuMjUgWiIgaWQ9InBhdGg4NjMiIHN0eWxlPSJmaWxsOiNjY2NjY2MiLz4NCjwvc3ZnPg==");
+            background-position: 0px 0px;
+        }
+
+        .wifi_signal_5 {
+            margin-left: 2%;
+            padding: 0 0 0 26px;
+            cursor: pointer;
+            display: inline-block;
+            height: 24px;
+            vertical-align: bottom;
+            background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8c3ZnIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6Y2M9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zIyIgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiB2ZXJzaW9uPSIxLjEiIGlkPSJzdmc4NjUiIHNvZGlwb2RpOmRvY25hbWU9IndpZmlfc2lnbmFsXzUuc3ZnIiBpbmtzY2FwZTp2ZXJzaW9uPSIwLjkyLjMgKDI0MDU1NDYsIDIwMTgtMDMtMTEpIj4NCiAgPG1ldGFkYXRhIGlkPSJtZXRhZGF0YTg3MSI+DQogICAgPHJkZjpSREY+DQogICAgICA8Y2M6V29yayByZGY6YWJvdXQ9IiI+DQogICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2Uvc3ZnK3htbDwvZGM6Zm9ybWF0Pg0KICAgICAgICA8ZGM6dHlwZSByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIi8+DQogICAgICAgIDxkYzp0aXRsZS8+DQogICAgICA8L2NjOldvcms+DQogICAgPC9yZGY6UkRGPg0KICA8L21ldGFkYXRhPg0KICA8ZGVmcyBpZD0iZGVmczg2OSIvPg0KICA8c29kaXBvZGk6bmFtZWR2aWV3IHBhZ2Vjb2xvcj0iI2ZmZmZmZiIgYm9yZGVyY29sb3I9IiM2NjY2NjYiIGJvcmRlcm9wYWNpdHk9IjEiIG9iamVjdHRvbGVyYW5jZT0iMTAiIGdyaWR0b2xlcmFuY2U9IjEwIiBndWlkZXRvbGVyYW5jZT0iMTAiIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIiBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIiBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9IjEzMjAiIGlkPSJuYW1lZHZpZXc4NjciIHNob3dncmlkPSJmYWxzZSIgaW5rc2NhcGU6em9vbT0iNDcuNDU4MzMzIiBpbmtzY2FwZTpjeD0iMTIiIGlua3NjYXBlOmN5PSIxMiIgaW5rc2NhcGU6d2luZG93LXg9IjI1NjAiIGlua3NjYXBlOndpbmRvdy15PSIyNyIgaW5rc2NhcGU6d2luZG93LW1heGltaXplZD0iMSIgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ic3ZnODY1Ii8+DQogIDxwYXRoIGQ9Ik00LjUwNCAxMy41NzJsLTEuNTA1LTEuNDg5YzIuMjAxLTIuODA1IDUuNDEzLTQuNTgzIDkuMDAxLTQuNTgzczYuOCAxLjc3OSA5IDQuNTgzbC0xLjUwNCAxLjQ4OWMtMS44MzUtMi4zMzgtNC41MTItMy44MjItNy40OTYtMy44MjJzLTUuNjYxIDEuNDg0LTcuNDk2IDMuODIyem03LjQ5Ni42NzhjMS43OTEgMCAzLjM5Ny44OTEgNC40OTggMi4yOTNsMS41MDItMS40ODhjLTEuNDY3LTEuODY5LTMuNjA4LTMuMDU1LTYtMy4wNTVzLTQuNTMzIDEuMTg2LTYgMy4wNTVsMS41MDIgMS40ODhjMS4xMDEtMS40MDIgMi43MDctMi4yOTMgNC40OTgtMi4yOTN6bTAgMi4yNWMtMS4xOTYgMC0yLjI1OC42MDItMi45OSAxLjUzNmwyLjk5IDIuOTY0IDIuOTktMi45NjNjLS43MzItLjkzNS0xLjc5NC0xLjUzNy0yLjk5LTEuNTM3em0wLTExLjI1YzQuMTc5IDAgNy45MjcgMi4wNzggMTAuNDk1IDUuMzUxbDEuNTA1LTEuNDkxYy0yLjkzNS0zLjczOS03LjIxNy02LjExLTEyLTYuMTFzLTkuMDY1IDIuMzcxLTEyIDYuMTFsMS41MDUgMS40OTFjMi41NjgtMy4yNzMgNi4zMTYtNS4zNTEgMTAuNDk1LTUuMzUxeiIgaWQ9InBhdGg4NjMiLz4NCjwvc3ZnPg==");
+            background-position: 0px 0px;
         }
     </style>
 </HEAD>
@@ -283,7 +327,7 @@ const char home[] PROGMEM = R"rawliteral(
                     <div id="sta_view">
                         <table>
                             <tr>
-                                <th>Network</th>
+                                <th>STA Network</th>
                                 <th>RSSI dBm</th>
                                 <th>Channel</th>
                             </tr>
@@ -301,12 +345,11 @@ const char home[] PROGMEM = R"rawliteral(
                                 <td colspan="2"><span id="txpwr"></span>&nbsp;dBm</td>
                             </tr>
                             <tr>
-                                <td>Authentication Mode:</td>
-                                <td colspan="2" data-bind="text: config.eauthmode()"></td>
+                                <td>PSK:</td>
+                                <td colspan="2" id="PSK"></td>
                             </tr>
                         </table>
                         <button id="wifiChange">Change WiFi network</button>
-                        <button data-bind="click: setAPMode, text: (saveAPModeFetching() ? 'Saving' :  (saveAPModeSuccess() ? 'Saved' : 'AP mode')), disable: saveAPModeFetching, style: {'background-color': config.web_color}">AP mode</button>
                         <br />
                         <br />
                         <table>
@@ -328,12 +371,11 @@ const char home[] PROGMEM = R"rawliteral(
                                 </tr>
                             </tbody>
                         </table>
-                        <button id="apoff" data-bind="visible: status.isWifiAccessPoint(), click: wifi.turnOffAccessPoint, disable: wifi.turnOffAccessPointFetching, style: {'background-color': config.web_color}">Turn off Access Point</button>
                     </div>
                     <div id="ap_view" style="display: none">
                         <table>
                             <tr>
-                                <th>Network</th>
+                                <th>AP Network</th>
                                 <th>Channel</th>
                             </tr>
                             <tr>
@@ -345,7 +387,6 @@ const char home[] PROGMEM = R"rawliteral(
                                 <td data-bind="text: config.txpwr() + ' dBm'"></td>
                             </tr>
                         </table>
-                        <button id="btn_wifiChange2">Change WiFi network</button>
                     </div>
                     <div id="ap_scan_view" style="display: none">
                         <p>Connect to network:</p>
@@ -378,7 +419,6 @@ const char home[] PROGMEM = R"rawliteral(
                     </div>
                 </div>
             </div>
-            <div id="loader" class="loader"></div>
             <div id="footer">
                 <br>
                 <b>Powered by <a href="http://WeGoWireless.com.com">WeGoWireless.com</a></b>
@@ -465,6 +505,7 @@ const char home[] PROGMEM = R"rawliteral(
                             ip.innerText = res.ip;
                             gw.innerText = res.gw;
                             dns.innerText = res.dns;
+
                             sta_ssid.value = res.sta_ssid;
                             sta_pass.value = res.sta_pass;
 
@@ -524,12 +565,7 @@ const char home[] PROGMEM = R"rawliteral(
                                     scanSpan.innerHTML = scanResults[i].ssid;
                                     scanLi.appendChild(scanSpan);
 
-                                    scanImg.setAttribute('width', '24px');
-                                    scanImg.setAttribute('heigth', '24px');
-                                    // from ESP
                                     scanImg.setAttribute('class', 'wifi_signal_' + strength(scanResults[i].rssi));
-                                    // from file
-                                    //scanImg.setAttribute('src', 'wifi_signal_' + strength(scanResults[i].rssi) + '.svg');
                                     scanImg.setAttribute('style', 'float: right;');
                                     scanLi.appendChild(scanImg);
 
@@ -573,15 +609,12 @@ const char home[] PROGMEM = R"rawliteral(
                     function ajaxCb(x, d) {
                         return function () {
                             if (x.readyState == 4) {
-                                ge("loader").style.display = "none";
                                 d.callback(x.status, x.responseText);
                                 if (that.queue.length === 0) that.running = false;
                                 if (that.running) that._request(that.queue.shift());
                             }
                         }
                     }
-
-                    ge("loader").style.display = "block";
 
                     var p = "";
                     if (req.params instanceof FormData) {
@@ -623,13 +656,6 @@ const char home[] PROGMEM = R"rawliteral(
             }
             var requests = new QueuedRequester();
 
-            function httpPostProcessRequest(status, responseText) {
-                if (status != 200)
-                    alert("ERROR[" + status + "]: " + responseText);
-                //else
-                    //tree.refreshPath(path.value);
-            }
-
             function onBodyLoad() {
                 const appVersion = ge("appVersion");
 
@@ -649,7 +675,7 @@ const char home[] PROGMEM = R"rawliteral(
                 const dns = ge("dns");
                 const sta_ssid = ge("sta_ssid");
                 const sta_pass = ge("sta_pass");
-
+                const btn_wifiSave = ge("wifiSave");
                 const btn_wifiChange = ge("wifiChange");
 
                 const scanList = ge("scanList");
@@ -662,34 +688,24 @@ const char home[] PROGMEM = R"rawliteral(
                     run_WiFi_Scan();
                 }
 
-                const btn_wifiSave = ge("wifiSave");
+                function httpPostSaveNetwork(status, responseText) {
+                    if (status != 200) {
+                        alert("ERROR[" + status + "]: " + responseText);
+                    } else {
+                        btn_wifiSave.innerText = "Saved";
+                    }
+                }
+                                
                 btn_wifiSave.onclick = function (e) {
                     btn_wifiSave.innerText = 'Saving';
                     if (sta_ssid === "") {
                         alert("Please select network");
                     } else {
+                        btn_wifiSave.innerText = "Saving";
                         var formData = new FormData();
                         formData.append("ssid", sta_ssid.value);
                         formData.append("pass", sta_pass.value);
-                        requests.add("POST", endpoint + "/savenetwork", formData, httpPostProcessRequest);
-
-                        //.post(endpoint + "/savenetwork", { ssid: sta_ssid, pass: sta_pass }, function () {
-                            // HACK: Almost certainly won't get a status update with client connected set to false so manually clear it here
-                            //self.status.wifi_client_connected(false);
-
-                            // Done with setting the config
-                            //self.forceConfig(false);
-
-                            // Wait for a new WiFi connection
-                            //self.wifiConnecting(true);
-
-                            // And indiccate the save was successful
-                            //self.saveNetworkSuccess(true);
-                        //}).fail(function () {
-                        //    alert("Failed to save WiFi config");
-                        //}).always(function () {
-                       //     self.saveNetworkFetching(false);
-                       //});
+                        requests.add("POST", endpoint + "/savenetwork", formData, httpPostSaveNetwork);
                     }
                 }
                 run();
@@ -750,4 +766,6 @@ const char home[] PROGMEM = R"rawliteral(
         </script>
 </BODY>
 </HTML>
+
+
 )rawliteral";
